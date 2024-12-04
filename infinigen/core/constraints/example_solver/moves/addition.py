@@ -113,6 +113,10 @@ class Addition(moves.Move):
             state, target_name, expand_collision=expand_collision
         )  # check
         if success:
+           
+            if "LargeShelfFactory(1502912).bbox_placeholder(2697479)" in objstate.obj.name:
+                import pdb
+                pdb.set_trace()
             a = 1
         logger.debug(f"{self} {success=}")
         return success
@@ -158,7 +162,7 @@ class Resample(moves.Move):
         parse_scene.add_to_scene(state.trimesh_scene, os.obj, preprocess=True)
         dof.apply_relations_surfacesample(state, target_name)
 
-        return validity.check_post_move_validity(state, target_name, expand_collision)
+        return validity.check_post_move_validity(state, target_name, expand_collision=expand_collision)
 
     def revert(self, state: State):
         (target_name,) = self.names

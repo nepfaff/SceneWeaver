@@ -206,8 +206,24 @@ class SimulatedAnnealingSolver:
                 )
                 break  # 退出循环
 
+            # (target_name,) = move.names
+            # if type(move).__name__=="Resample":
+            #     if len(state.objs.keys())==35:
+            #         import pdb
+            #         pdb.set_trace()  
+            #     if "LargeShelfFactory(1502912).bbox_placeholder(2697479)" in state.objs[target_name].obj.name:
+            #         import pdb
+                    # pdb.set_trace()                                                                                                
+
             succeeded = move.apply(state, expand_collision)  # 尝试应用移动到当前状态
+           
             if succeeded:  # 如果成功应用
+                # (target_name,) = move.names
+                # if not type(move).__name__=="Deletion":
+                #     if "LargeShelfFactory(1502912).bbox_placeholder(2697479)" in state.objs[target_name].obj.name:
+                #         import pdb
+                #         pdb.set_trace()
+               
                 evaluator.evict_memo_for_move(consgraph, state, self.eval_memo, move)
                 result = self.evaluate_move(consgraph, state, move, filter_domain)
                 return move, result, retry  # 返回移动、结果和尝试次数

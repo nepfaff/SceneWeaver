@@ -409,8 +409,10 @@ class SimpleDeskBaseFactory(AssetFactory):
 
 class SimpleDeskFactory(SimpleDeskBaseFactory):
     def sample_params(self):
+        #YYD
         params = dict()
-        params["Dimensions"] = (uniform(0.5, 0.75), uniform(0.8, 2), uniform(0.6, 0.8))
+        params["Dimensions"] = (0.7312919497489929, 1.9446359872817993, 0.8518573641777039)
+        # params["Dimensions"] = (uniform(0.5, 0.75), uniform(0.8, 2), uniform(0.6, 0.8))
         params["depth"] = params["Dimensions"][0]
         params["width"] = params["Dimensions"][1]
         params["height"] = params["Dimensions"][2]

@@ -398,7 +398,7 @@ def min_dist(
     a, b, a_tags, b_tags = preprocess_collision_query_cases(a, b, a_tags, b_tags)
     # 创建 a 的碰撞检测对象
     col = iu.col_from_subset(scene, a, a_tags, bvh_cache)
-    
+
     # 如果 b 为空且 a 是单个对象，初始化一个非常大的距离和空数据
     if b is None and len(a) == 1:
         dist, data = 1e9, None
@@ -427,14 +427,16 @@ def min_dist(
             data._points[b] = data._points["__external"]
             data._points.pop("__external")
             logging.debug(f"WARNING: swapped __external for {b} to make {data.names}")
-            
+
     # 如果 b 是一个列表或集合
     elif isinstance(b, (list, set)):
         logger.debug(f"min_dist_other({a=}, {b=})")
-        col2 = iu.col_from_subset(scene, b, b_tags, bvh_cache)# 为 b 创建碰撞检测对象
-        dist, data = col.min_distance_other(col2, return_data=True)  # 计算 a 和 b 的最小距离
+        col2 = iu.col_from_subset(scene, b, b_tags, bvh_cache)  # 为 b 创建碰撞检测对象
+        dist, data = col.min_distance_other(
+            col2, return_data=True
+        )  # 计算 a 和 b 的最小距离
     else:
-        raise ValueError(f"Unhandled case {a=} {b=}") # 对未处理的情况抛出异常
+        raise ValueError(f"Unhandled case {a=} {b=}")  # 对未处理的情况抛出异常
 
     if data is not None:
         assert "__external" not in data.names
@@ -1284,8 +1286,9 @@ def accessibility_cost(scene, a, b, normal, visualize=False, fast=True):
     if len(b) == 0:
         return 0
     import pdb
+
     pdb.set_trace()
-    visualize  = True
+    visualize = True
     if visualize:
         fig, ax = plt.subplots()
     # 从场景中获取 a 和 b 的三角网格（trimesh）和 Blender 对象
@@ -1295,7 +1298,7 @@ def accessibility_cost(scene, a, b, normal, visualize=False, fast=True):
     a_objs = iu.blender_objs_from_names(a)
     iu.blender_objs_from_names(b)
 
-    score = 0# 初始化阻挡分数
+    score = 0  # 初始化阻挡分数
     for a_name, a_obj, a_trimesh in zip(a, a_objs, a_trimeshes):
         # 获取物体 a 的质心
         a_centroid = a_trimesh.centroid
@@ -1315,19 +1318,19 @@ def accessibility_cost(scene, a, b, normal, visualize=False, fast=True):
             # get the closest centroid in b and the mesh that it belongs to
             b_centroids = [b_trimesh.centroid for b_trimesh in b_trimeshes]
             distances = [np.linalg.norm(pt - a_centroid_proj) for pt in b_centroids]
-            min_index = np.argmin(distances) # 最近质心的索引
+            min_index = np.argmin(distances)  # 最近质心的索引
             b_closest_pt = b_centroids[min_index]  # 最近的 b 的质心
-            b_chosen = b[min_index] # 对应的物体名称
+            b_chosen = b[min_index]  # 对应的物体名称
         else:
             # 如果不使用快速计算，通过场景中的最短距离计算 b
             # might need to change this to closest pt on the frontal plane
             res = min_dist(scene, a_name, b)
             b_chosen = res.names[1] if res.names[0] == a_name else res.names[0]
             b_closest_pt = res.data.point(b_chosen)
-        
+
         # 计算从 a 到最近 b 的向量
         centroid_to_b = b_closest_pt - a_centroid_proj
-        
+
         # 计算向量长度（距离）和 b 的对角线长度
         dist = np.linalg.norm(centroid_to_b)
         bounds = iu.meshes_from_names(scene, b_chosen)[0].bounds

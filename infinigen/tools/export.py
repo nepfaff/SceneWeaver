@@ -243,6 +243,7 @@ def update_visibility():
     space.show_restrict_column_viewport = True  # Global visibility (Monitor icon)
     collection_view = {}
     obj_view = {}
+
     for collection in bpy.data.collections:
         collection_view[collection] = collection.hide_render
         collection.hide_viewport = False  # reenables viewports for all

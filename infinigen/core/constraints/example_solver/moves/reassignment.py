@@ -68,6 +68,10 @@ class RelationPlaneChange(moves.Move):
         success = dof.try_apply_relation_constraints(
             state, target_name, expand_collision=expand_collision
         )
+        if success:
+            if "LargeShelfFactory(1502912).bbox_placeholder(2697479)" in state.objs[target_name].obj.name:
+                import pdb
+                pdb.set_trace()
         return success
 
     def revert(self, state: State):

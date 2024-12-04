@@ -67,9 +67,7 @@ if __name__ == "__main__":
 
     if len(unknown_args):
         cmd_args += unknown_args
-    import pdb
-
-    pdb.set_trace()
+  
     print(" ".join(cmd_args))
 
     # 使用subprocess.run()运行命令

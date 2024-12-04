@@ -41,7 +41,9 @@ class TranslateMove(moves.Move):
 
         if not validity.check_post_move_validity(state, target_name,expand_collision=expand_collision):
             return False
-
+        if "LargeShelfFactory(1502912).bbox_placeholder(2697479)" in state.objs[target_name].obj.name:
+            import pdb
+            pdb.set_trace()
         return True
 
     def revert(self, state: State):

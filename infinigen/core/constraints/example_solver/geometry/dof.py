@@ -15,7 +15,7 @@ from shapely.geometry import Point
 import infinigen.core.constraints.example_solver.geometry.validity as validity
 import infinigen.core.util.blender as butil
 
-# from debug import invisible_others, visible_others
+from infinigen_examples.util.visible import invisible_others, visible_others
 from infinigen.core import tagging
 from infinigen.core import tags as t
 from infinigen.core.constraints import constraint_language as cl
@@ -521,6 +521,9 @@ def try_apply_relation_constraints(
             # invisible_others()
             # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
             # visible_others()
+            # if "LargeShelfFactory(1502912).bbox_placeholder(2697479)" in state.objs[name].obj.name:
+            #     import pdb
+            #     pdb.set_trace()
             # import pdb
             # pdb.set_trace()
             return True

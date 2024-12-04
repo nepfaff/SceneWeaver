@@ -23,7 +23,8 @@ from infinigen.core.constraints.evaluator.node_impl.trimesh_geometry import (
 from infinigen.core.constraints.example_solver.geometry.stability import stable_against
 from infinigen.core.constraints.example_solver.state_def import State
 from infinigen.core.util import blender as butil
-
+from infinigen_examples.util.visible import invisible_others, visible_others
+import bpy
 logger = logging.getLogger(__name__)
 
 
@@ -123,8 +124,10 @@ def check_post_move_validity(
     # objstate.obj.rotation_euler
     # Euler((0.0, -0.0, 1.570796012878418), 'XYZ')
     # if "SimpleBookcaseFactory" in name:
-    # import pdb
-    # pdb.set_trace()
+    
+    # invisible_others()
+    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+    # visible_others()
     
     if expand_collision:
         touch = any_touching_expand(  # mark
@@ -133,6 +136,7 @@ def check_post_move_validity(
             collision_objs,
             bvh_cache=state.bvh_cache,
         )
+        
     else:
         touch = any_touching(  # mark
             scene, objstate.obj.name, collision_objs, bvh_cache=state.bvh_cache
@@ -155,6 +159,7 @@ def check_post_move_validity(
     # )
 
     # supposed to go through the consgraph here
+    
     return True
 
 

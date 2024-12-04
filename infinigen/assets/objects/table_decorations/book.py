@@ -272,7 +272,6 @@ class BookStackFactory(AssetFactory):
             except:
                 continue
 
-    
         scale = np.min(
             np.array(
                 [

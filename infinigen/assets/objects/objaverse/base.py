@@ -194,7 +194,7 @@ def load_pickled_3d_asset(file_path, idx=0):
     #    i = idx//10
     #    j = idx%10
     #    obj.location =    [0.2*i ,0.5*j, 0  ]
-  
+
     # Update mesh to apply UV changes
     mesh.update()
 
