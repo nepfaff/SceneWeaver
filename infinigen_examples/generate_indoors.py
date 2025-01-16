@@ -188,16 +188,14 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
                         "edit_object": bpy.context.edit_object,
                     }
                     bpy.ops.view3d.view_all(override)
-    
-    
+
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
     def init_graph():
         solver.init_graph()
-            # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         return solver.state
-    
-    state = p.run_stage("init_graph", init_graph, use_chance=False, default=state)
 
+    state = p.run_stage("init_graph", init_graph, use_chance=False, default=state)
 
     def solve_large():
         assignments = greedy.iterate_assignments(

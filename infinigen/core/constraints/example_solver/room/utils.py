@@ -40,15 +40,15 @@ def is_valid_polygon(p):
 
 def canonicalize(p):
     # 修正多边形的几何问题（例如自交或无效的多边形）
-    p = p.buffer(0) # 使用 buffer(0) 修复可能的几何问题
+    p = p.buffer(0)  # 使用 buffer(0) 修复可能的几何问题
     try:
         while True:  # 不断迭代，直到多边形满足要求
-             # 简化多边形并强制为2D
+            # 简化多边形并强制为2D
             p_ = shapely.force_2d(simplify_polygon(p))
-            l = len(p.boundary.coords)# 获取边界坐标的数量
-            if p.area == 0:# 如果多边形面积为0，抛出异常
+            l = len(p.boundary.coords)  # 获取边界坐标的数量
+            if p.area == 0:  # 如果多边形面积为0，抛出异常
                 raise NotImplementedError("Polygon empty.")
-             # 规范多边形方向（顺时针或逆时针）
+            # 规范多边形方向（顺时针或逆时针）
             p = orient(p_)
             # 获取边界的坐标并转换为NumPy数组
             coords = np.array(p.boundary.coords[:])
@@ -66,7 +66,7 @@ def canonicalize(p):
             diff = diff / (np.linalg.norm(diff, axis=-1, keepdims=True) + 1e-6)
             # 计算相邻向量之间的点积，检测chui直线性
             product = (diff[[-1] + list(range(len(diff) - 1))] * diff).sum(-1)
-             # 初始化有效的索引（所有点）
+            # 初始化有效的索引（所有点）
             valid_indices = list(range(len(coords) - 1))
             # 找到无效的点索引（点积过小或接近1）
             invalid_indices = np.nonzero((product < -0.8) | (product > 1 - 1e-6))[
@@ -84,7 +84,7 @@ def canonicalize(p):
         # 检查多边形是否有效，如果无效则抛出异常
         if not is_valid_polygon(p):
             raise NotImplementedError("Invalid polygon")
-        return p # 返回规范化后的多边形
+        return p  # 返回规范化后的多边形
     except AttributeError:
         raise NotImplementedError("Invalid multi polygon")
 

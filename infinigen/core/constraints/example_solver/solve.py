@@ -22,16 +22,36 @@ from infinigen.core.constraints.example_solver import (
     propose_continous,
     propose_discrete,
 )
+from infinigen.core.constraints.example_solver.propose_discrete import moves
 from infinigen.core.constraints.example_solver.state_def import State
 from infinigen.core.util import blender as butil
-from infinigen.core.constraints.example_solver.propose_discrete import moves
 
 from .annealing import SimulatedAnnealingSolver
 from .room import MultistoryRoomSolver, RoomSolver
 
+from infinigen.assets.objects import (
+            appliances,
+            bathroom,
+            decor,
+            elements,
+            lamp,
+            seating,
+            shelves,
+            table_decorations,
+            tables,
+            tableware,
+            wall_decorations,
+        )
+from infinigen.core.constraints import usage_lookup
+import math
+
+import importlib
+from infinigen.core import tags as t
+
 logger = logging.getLogger(__name__)
 
 GLOBAL_GENERATOR_SINGLETON_CACHE = {}
+
 
 def map_range(x, xmin, xmax, ymin, ymax, exp=1):
     if x < xmin:
@@ -270,36 +290,88 @@ class Solver:
     @gin.configurable
     def init_graph(
         self,
-    ):  
-        from infinigen.assets.objects import seating
-        from infinigen.core import tags as t
-        from infinigen.core import tags as t
-
-        gen_class = seating.SofaFactory
-        assignments = []
-
-        tags = {t.Semantics.LoungeSeating, t.Semantics.Furniture, t.Semantics.Seating, t.Semantics.Object, 
-                t.Semantics.PlaceholderBBox, -t.Semantics.Room, t.FromGenerator(seating.SofaFactory)}
+    ):
+        name_mapping = {
+                            "Sofa": "seating.SofaFactory",
+                            "ArmChair": "seating.ArmChairFactory",
+                            "CoffeeTable": "tables.CoffeeTableFactory",
+                            "TVStand": "shelves.TVStandFactory",
+                            "TV": "appliances.TVFactory",
+                            "BookColumn": "table_decorations.BookColumnFactory",
+                            "LargeShelf": "shelves.LargeShelfFactory",
+                            "FloorLamp": "lamp.FloorLampFactory",
+                            "SideTable": "tables.SideTableFactory",
+                            "book": None,
+                            "remote": None,
+                            "magazine": None,
+                            "plant": "tableware.PlantContainerFactory",
+                            "photo frame": None,
+                            "vase": "table_decorations.VaseFactory",
+                            "decorative item": None,
+                            "coaster": None,
+                            "candle": None
+                        }
+        info_dict = {
+                        "Sofa": {"1": {"position": [2.5, 2], "rotation": 0}},
+                        "ArmChair": {
+                            "1": {"position": [1, 1], "rotation": 0},
+                            "2": {"position": [4, 1], "rotation": 0}
+                        },
+                        "CoffeeTable": {"1": {"position": [2.5, 3.5], "rotation": 0}},
+                        "TVStand": {"1": {"position": [2.5, 6.5], "rotation": 270}},
+                        "TV": {"1": {"position": [2.5, 6.25], "rotation": 270}},
+                        "BookColumn": {
+                            "1": {"position": [0.5, 6.5], "rotation": 270},
+                            "2": {"position": [4.5, 6.5], "rotation": 270}
+                        },
+                        "LargeShelf": {"1": {"position": [2.5, 0.5], "rotation": 90}},
+                        "FloorLamp": {
+                            "1": {"position": [1.5, 2], "rotation": 0},
+                            "2": {"position": [3.5, 2], "rotation": 0}
+                        },
+                        "SideTable": {
+                            "1": {"position": [0.75, 1], "rotation": 0},
+                            "2": {"position": [4.25, 1], "rotation": 0}
+                        }
+                    }
         
-        move = moves.Addition(
-            names=[
-                f"{np.random.randint(1e6):04d}_{gen_class.__name__}"
-            ],  # decided later # 随机生成一个名称，基于生成器类的名称
-            gen_class=gen_class,  # 使用传入的生成器类
-            relation_assignments=assignments,  # 传入分配的关系
-            temp_force_tags=tags,  # 临时强制标签
-        )
+        for key, value in info_dict.items():
+            for num in value.keys():
+                position = value[num]["position"] + [0]
+                rotation = value[num]["rotation"] * math.pi / 180
+                name = key
+                module_and_class = name_mapping[name]
+                module_name, class_name = module_and_class.rsplit('.', 1)
+                module = importlib.import_module("infinigen.assets.objects."+module_name)
+                class_obj = getattr(module, class_name)
+                gen_class = class_obj
+                # gen_class = seating.SofaFactory
+                assignments = []
 
-        target_name = "945674_SofaFactory"
-        size = ""
-        position = [-10,-10,0]
-        orientation = ""
-        meshpath = ""
-        
-        move.apply_init(self.state, target_name, size, position, orientation, gen_class, meshpath)
+                found_tags = usage_lookup.usages_of_factory(
+                    gen_class
+                )
+                
+                move = moves.Addition(
+                    names=[
+                        f"{np.random.randint(1e6):04d}_{gen_class.__name__}"
+                    ],  # decided later # 随机生成一个名称，基于生成器类的名称
+                    gen_class=gen_class,  # 使用传入的生成器类
+                    relation_assignments=assignments,  # 传入分配的关系
+                    temp_force_tags=found_tags,  # 临时强制标签
+                )
+                
+                target_name = f"{np.random.randint(1e7)}_{class_name}"
+                # target_name = np.random.randint(1e7)+"_SofaFactory"
+                size = ""
+                
+                meshpath = ""
+
+                move.apply_init(
+                    self.state, target_name, size, position, rotation, gen_class, meshpath
+                )
 
         return self.state
-
 
     def get_bpy_objects(self, domain: r.Domain) -> list[bpy.types.Object]:
         objkeys = domain_contains.objkeys_in_dom(domain, self.state)

@@ -1,103 +1,205 @@
 {
     "big_category_dict": {
-        "sofa": 2,
-        "armchair": 2,
-        "coffee table": 1,
-        "TV stand": 1,
-        "large shelf": 1,
-        "bookcase": 1,
-        "side table": 2
+        "Sofa": "1",
+        "ArmChair": "2",
+        "CoffeeTable": "1",
+        "TVStand": "1",
+        "TV": "1",
+        "BookColumn": "2",
+        "LargeShelf": "1",
+        "FloorLamp": "2",
+        "SideTable": "2"
     },
     "category_against_wall": [
-        "TV stand",
-        "large shelf",
-        "bookcase"
+        "TVStand",
+        "TV",
+        "LargeShelf",
+        "BookColumn"
     ],
     "relation_big_object": [
         [
-            "coffee table",
-            "sofa",
+            "CoffeeTable",
+            "Sofa",
             "front_against"
         ],
         [
-            "side table",
-            "armchair",
+            "SideTable",
+            "ArmChair",
             "side_by_side"
         ],
         [
-            "side table",
-            "sofa",
+            "FloorLamp",
+            "Sofa",
             "side_by_side"
         ]
     ],
     "small_category_list": [
-        "remote control",
         "book",
+        "remote",
+        "magazine",
         "plant",
         "photo frame",
         "vase",
-        "magazine",
-        "coaster",
         "decorative item",
-        "candle",
-        "lamp"
+        "coaster",
+        "candle"
     ],
     "relation_small_object": [
         [
-            "book",
-            "large shelf",
-            "on",
-            "5"
-        ],
-        [
-            "book",
-            "bookcase",
-            "on",
-            "10"
-        ],
-        [
             "plant",
-            "coffee table",
+            "CoffeeTable",
             "ontop",
             "1"
         ],
         [
             "plant",
-            "side table",
+            "SideTable",
             "ontop",
             "1"
         ],
         [
             "vase",
-            "coffee table",
+            "CoffeeTable",
             "ontop",
             "1"
         ],
         [
-            "lamp",
-            "side table",
+            "vase",
+            "SideTable",
             "ontop",
             "1"
         ]
     ],
     "name_mapping": {
-        "sofa": "seating.SofaFactory",
-        "armchair": "seating.ArmChairFactory",
-        "coffee table": "tables.CoffeeTableFactory",
-        "TV stand": "shelves.TVStandFactory",
-        "large shelf": "shelves.LargeShelfFactory",
-        "bookcase": "shelves.SimpleBookcaseFactory",
-        "side table": "tables.SideTableFactory",
-        "remote control": null,
-        "book": "table_decorations.BookStackFactory",
+        "Sofa": "seating.SofaFactory",
+        "ArmChair": "seating.ArmChairFactory",
+        "CoffeeTable": "tables.CoffeeTableFactory",
+        "TVStand": "shelves.TVStandFactory",
+        "TV": "appliances.TVFactory",
+        "BookColumn": "table_decorations.BookColumnFactory",
+        "LargeShelf": "shelves.LargeShelfFactory",
+        "FloorLamp": "lamp.FloorLampFactory",
+        "SideTable": "tables.SideTableFactory",
+        "book": null,
+        "remote": null,
+        "magazine": null,
         "plant": "tableware.PlantContainerFactory",
         "photo frame": null,
         "vase": "table_decorations.VaseFactory",
-        "magazine": null,
-        "coaster": null,
         "decorative item": null,
-        "candle": null,
-        "lamp": "lamp.DeskLampFactory"
+        "coaster": null,
+        "candle": null
     },
-    "gpt_text_response": "```python\nconstraints[\"living_room\"] = newroom.all(\n    lambda r: (\n        sofa_obj.related_to(r).count().in_range(2, 2)\n        * armchair_obj.related_to(r).count().in_range(2, 2)\n        * coffee_table_obj.related_to(r).count().in_range(1, 1)\n        * coffee_table_obj.related_to(r).related_to(sofa_obj.related_to(r), cu.front_against)\n        * TV_stand_obj.related_to(r).count().in_range(1, 1)\n        * large_shelf_obj.related_to(r).count().in_range(1, 1)\n        * large_shelf_obj.related_to(r).all(\n            lambda s: (\n                book_obj.related_to(s, cu.on).count().in_range(5, 5)\n                * (book_obj.related_to(s, cu.on).count() >= 0)\n            )\n        )\n        * bookcase_obj.related_to(r).count().in_range(1, 1)\n        * bookcase_obj.related_to(r).all(\n            lambda s: (\n                book_obj.related_to(s, cu.on).count().in_range(10, 10)\n                * (book_obj.related_to(s, cu.on).count() >= 0)\n            )\n        )\n        * side_table_obj.related_to(r).count().in_range(2, 2)\n        * side_table_obj.related_to(r).related_to(armchair_obj.related_to(r), cu.side_by_side)\n        * side_table_obj.related_to(r).related_to(sofa_obj.related_to(r), cu.side_by_side)\n        * side_table_obj.related_to(r).all(\n            lambda s: (\n                lamp_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n                * (lamp_obj.related_to(s, cu.ontop).count() >= 0)\n            )\n        )\n        * coffee_table_obj.related_to(r).all(\n            lambda s: (\n                plant_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n                * (plant_obj.related_to(s, cu.ontop).count() >= 0)\n                * vase_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n                * (vase_obj.related_to(s, cu.ontop).count() >= 0"
+    "gpt_text_response": "constraints[\"living_room\"] = newroom.all(\n    lambda r: (\n        Sofa_obj.related_to(r).count().in_range(1, 1)\n        * CoffeeTable_obj.related_to(r).count().in_range(1, 1)\n        * CoffeeTable_obj.related_to(Sofa_obj.related_to(r), cu.front_against).count().in_range(1, 1)\n        * ArmChair_obj.related_to(r).count().in_range(2, 2)\n        * SideTable_obj.related_to(r).count().in_range(2, 2)\n        * SideTable_obj.related_to(ArmChair_obj.related_to(r), cu.side_by_side).count().in_range(2, 2)\n        * TVStand_obj.related_to(r).count().in_range(1, 1)\n        * TV_obj.related_to(TVStand_obj.related_to(r), cu.front_to_front).count().in_range(1, 1)\n        * BookColumn_obj.related_to(r).count().in_range(2, 2)\n        * LargeShelf_obj.related_to(r).count().in_range(1, 1)\n        * FloorLamp_obj.related_to(r).count().in_range(2, 2)\n        * CoffeeTable_obj.related_to(r).all(\n            lambda s: (\n                plant_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n                * vase_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n            )\n        )\n        * SideTable_obj.related_to(r).all(\n            lambda s: (\n                plant_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n                * vase_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n            )\n        )\n    )\n)",
+    "Placement": {
+        "Sofa": {
+            "1": {
+                "position": [
+                    2.5,
+                    2
+                ],
+                "rotation": 0
+            }
+        },
+        "ArmChair": {
+            "1": {
+                "position": [
+                    1,
+                    1
+                ],
+                "rotation": 0
+            },
+            "2": {
+                "position": [
+                    4,
+                    1
+                ],
+                "rotation": 0
+            }
+        },
+        "CoffeeTable": {
+            "1": {
+                "position": [
+                    2.5,
+                    3.5
+                ],
+                "rotation": 0
+            }
+        },
+        "TVStand": {
+            "1": {
+                "position": [
+                    2.5,
+                    6.5
+                ],
+                "rotation": 270
+            }
+        },
+        "TV": {
+            "1": {
+                "position": [
+                    2.5,
+                    6.25
+                ],
+                "rotation": 270
+            }
+        },
+        "BookColumn": {
+            "1": {
+                "position": [
+                    0.5,
+                    6.5
+                ],
+                "rotation": 270
+            },
+            "2": {
+                "position": [
+                    4.5,
+                    6.5
+                ],
+                "rotation": 270
+            }
+        },
+        "LargeShelf": {
+            "1": {
+                "position": [
+                    2.5,
+                    0.5
+                ],
+                "rotation": 90
+            }
+        },
+        "FloorLamp": {
+            "1": {
+                "position": [
+                    1.5,
+                    2
+                ],
+                "rotation": 0
+            },
+            "2": {
+                "position": [
+                    3.5,
+                    2
+                ],
+                "rotation": 0
+            }
+        },
+        "SideTable": {
+            "1": {
+                "position": [
+                    0.75,
+                    1
+                ],
+                "rotation": 0
+            },
+            "2": {
+                "position": [
+                    4.25,
+                    1
+                ],
+                "rotation": 0
+            }
+        }
+    }
 }

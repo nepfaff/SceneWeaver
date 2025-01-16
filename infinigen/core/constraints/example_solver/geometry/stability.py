@@ -242,7 +242,7 @@ def snap_against(scene, a, b, a_plane, b_plane, margin=0):
         raise ValueError(f"Invalid {rotation_angle=}")
     # 旋转对象 `a`，使其法向量与 `b` 的法向量对齐。
     iu.rotate(scene, a, rotation_axis, rotation_angle)
-    
+
     # 更新对象 `a` 和其法向量信息（旋转后需重新计算）。
     a_obj = bpy.data.objects[a]
     a_poly = a_obj.data.polygons[a_poly_index]

@@ -195,7 +195,7 @@ class BlueprintSolver:
         if not satisfies.is_success:
             return satisfies
         return resp
-    
+
     def perturb_solution_singleroom(self, assignment, info):
         """
         扰动当前房间分布的解，通过随机操作（外扩、内缩、交换房间等）来生成新解。
@@ -206,9 +206,9 @@ class BlueprintSolver:
         返回:
         - 一个表示扰动结果的 RoomSolverMsg 或其他响应对象。
         """
-        
+
         resp = RoomSolverMsg("success")
-        
+
         info["neighbours_all"] = {
             k: set(compute_neighbours(se, SEGMENT_MARGIN))
             for k, se in info["shared_edges"].items()

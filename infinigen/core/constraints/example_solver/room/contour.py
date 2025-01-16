@@ -31,7 +31,7 @@ class ContourFactory:
         self.n_trials = 1000
 
     def make_contour(self, i):
-        #随机生成一个带有不同角特征（长角、圆角、直角、锐角）的多边形轮廓
+        # 随机生成一个带有不同角特征（长角、圆角、直角、锐角）的多边形轮廓
         with FixedSeed(i):
             obj = new_plane()
             obj.location = self.width / 2, self.height / 2, 0
@@ -70,7 +70,7 @@ class ContourFactory:
                 # 如果随机值在 0.2 和 0.35 之间，添加圆角。
                 elif r < 0.35:
                     self.add_round_corner(obj, x, y)
-                # 如果随机值在 0.35 和 0.5 之间，添加直角。 
+                # 如果随机值在 0.35 和 0.5 之间，添加直角。
                 elif r < 0.5:
                     self.add_straight_corner(obj, x, y)
                 # 如果随机值在 0.5 和 0.65 之间，添加锐角。
@@ -78,12 +78,12 @@ class ContourFactory:
                     self.add_sharp_corner(obj, x, y)
             # 获取平面的顶点数据并生成一个多边形。
             vertices = obj.data.polygons[0].vertices
-            p = Polygon(read_co(obj)[:, :2][vertices]) # 创建 2D 多边形。
+            p = Polygon(read_co(obj)[:, :2][vertices])  # 创建 2D 多边形。
             butil.delete(obj)
             return p
-        
+
     def make_contour_singleroom(self, i):
-        #随机生成一个带有不同角特征（长角、圆角、直角、锐角）的多边形轮廓
+        # 随机生成一个带有不同角特征（长角、圆角、直角、锐角）的多边形轮廓
         with FixedSeed(i):
             obj = new_plane()
             obj.location = self.width / 2, self.height / 2, 0
@@ -99,7 +99,7 @@ class ContourFactory:
 
             # 获取平面的顶点数据并生成一个多边形。
             vertices = obj.data.polygons[0].vertices
-            p = Polygon(read_co(obj)[:, :2][vertices]) # 创建 2D 多边形。
+            p = Polygon(read_co(obj)[:, :2][vertices])  # 创建 2D 多边形。
             butil.delete(obj)
             return p
 

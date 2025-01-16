@@ -10,9 +10,10 @@ import random
 import bpy
 
 from infinigen.assets.static_assets.base import StaticAssetFactory
+from infinigen.assets.utils.object import new_bbox
 from infinigen.core.tagging import tag_support_surfaces
 from infinigen.core.util.math import FixedSeed
-from infinigen.assets.utils.object import new_bbox
+
 
 def static_category_factory(
     path_to_assets: str,
@@ -81,7 +82,7 @@ def static_category_factory(
                 return imported_obj
             else:
                 raise ValueError(f"Failed to import asset: {self.asset_file}")
-       
+
         def create_placeholder(self, **kwargs) -> bpy.types.Object:
             return new_bbox(
                 -self.width / 2,
@@ -91,6 +92,7 @@ def static_category_factory(
                 -self.thickness / 2,
                 self.thickness / 2,
             )
+
     return StaticCategoryFactory
 
 

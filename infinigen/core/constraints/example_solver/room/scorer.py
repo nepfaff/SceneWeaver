@@ -116,7 +116,6 @@ class BlueprintScorer:
             scores["narrow_passage"] = score
         return scores
 
-
     def shortest_path(self, assignment, info):
         """
         此代码适用于在图结构中计算多段之间的最短路径，特别是在具有共享边的复杂几何场景中，比如建筑物中的房间和通道布局分析。

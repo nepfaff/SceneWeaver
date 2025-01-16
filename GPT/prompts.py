@@ -35,7 +35,7 @@ Failure case of relation:
 Here is the example: 
 {
     "Roomtype": "Bedroom",
-    "Size": [3, 4],
+    "Roomsize": [3, 4],
     "Category list of big object": {"bed":"1", "wardrobe":"1", "nightstand":"2", "bench":"1"},
     "Object against the wall": ["bed", "wardrobe", "nightstand"],
     "Relation between big objects": [["nightstand", "bed", "side_by_side"], ["bench", "bed", "front_to_front"]]
@@ -47,7 +47,6 @@ Roomtype: {roomtype}
 
 Here is your response:
 """
-
 
 
 #### 2. get small object and relation
@@ -82,7 +81,7 @@ Here is the example:
 """
 
 step_2_small_object_prompt_user = """
-Here is the roomtype you need to design:
+Here is the given roominfo:
 Roomtype: {roomtype}
 List of big furniture: {big_category_list}
 
@@ -116,28 +115,28 @@ Here is the example:
 }
 """
 step_3_class_name_prompt_user = """
-Here is the roomtype you need to design:
+Here is the given roominfo:
 Roomtype: Bookstore
 List of given category names:  {category_list}
 
 Here is your response:
 """
 
-# ['BeverageFridgeFactory', 'DishwasherFactory', 'MicrowaveFactory', 'OvenFactory', 'MonitorFactory', 'TVFactory', 
-#  'BathroomSinkFactory', 'StandingSinkFactory', 'BathtubFactory', 'HardwareFactory', 'ToiletFactory', 
-#  'AquariumTankFactory', 'DoorCasingFactory', 'GlassPanelDoorFactory', 'LiteDoorFactory', 'LouverDoorFactory', 
-#  'PanelDoorFactory', 'NatureShelfTrinketsFactory', 'PillarFactory', 'RugFactory', 'CantileverStaircaseFactory', 
-#  'CurvedStaircaseFactory', 'LShapedStaircaseFactory', 'SpiralStaircaseFactory', 'StraightStaircaseFactory', 
-#  'UShapedStaircaseFactory', 'PalletFactory', 'RackFactory', 'CeilingClassicLampFactory', 'CeilingLightFactory', 
-#  'DeskLampFactory', 'FloorLampFactory', 'LampFactory', 'BedFactory', 'BedFrameFactory', 'BarChairFactory', 
-#  'ChairFactory', 'OfficeChairFactory', 'MattressFactory', 'PillowFactory', 'ArmChairFactory', 'SofaFactory', 
-#  'CellShelfFactory', 'TVStandFactory', 'CountertopFactory', 'CabinetDoorBaseFactory', 'KitchenCabinetFactory', 
-#  'KitchenIslandFactory', 'KitchenSpaceFactory', 'LargeShelfFactory', 'SimpleBookcaseFactory', 'SidetableDeskFactory', 
-#  'SimpleDeskFactory', 'SingleCabinetFactory', 'TriangleShelfFactory', 'BookColumnFactory', 'BookFactory', 
-#  'BookStackFactory', 'SinkFactory', 'TapFactory', 'VaseFactory', 'TableCocktailFactory', 
-#  'CoffeeTableFactory', 'SideTableFactory', 'TableDiningFactory', 'TableTopFactory', 'BottleFactory', 'BowlFactory', 
-#  'CanFactory', 'ChopsticksFactory', 'CupFactory', 'FoodBagFactory', 'FoodBoxFactory', 'ForkFactory', 
-#  'SpatulaFactory', 'FruitContainerFactory', 'JarFactory', 'KnifeFactory', 'LidFactory', 'PanFactory', 
+# ['BeverageFridgeFactory', 'DishwasherFactory', 'MicrowaveFactory', 'OvenFactory', 'MonitorFactory', 'TVFactory',
+#  'BathroomSinkFactory', 'StandingSinkFactory', 'BathtubFactory', 'HardwareFactory', 'ToiletFactory',
+#  'AquariumTankFactory', 'DoorCasingFactory', 'GlassPanelDoorFactory', 'LiteDoorFactory', 'LouverDoorFactory',
+#  'PanelDoorFactory', 'NatureShelfTrinketsFactory', 'PillarFactory', 'RugFactory', 'CantileverStaircaseFactory',
+#  'CurvedStaircaseFactory', 'LShapedStaircaseFactory', 'SpiralStaircaseFactory', 'StraightStaircaseFactory',
+#  'UShapedStaircaseFactory', 'PalletFactory', 'RackFactory', 'CeilingClassicLampFactory', 'CeilingLightFactory',
+#  'DeskLampFactory', 'FloorLampFactory', 'LampFactory', 'BedFactory', 'BedFrameFactory', 'BarChairFactory',
+#  'ChairFactory', 'OfficeChairFactory', 'MattressFactory', 'PillowFactory', 'ArmChairFactory', 'SofaFactory',
+#  'CellShelfFactory', 'TVStandFactory', 'CountertopFactory', 'CabinetDoorBaseFactory', 'KitchenCabinetFactory',
+#  'KitchenIslandFactory', 'KitchenSpaceFactory', 'LargeShelfFactory', 'SimpleBookcaseFactory', 'SidetableDeskFactory',
+#  'SimpleDeskFactory', 'SingleCabinetFactory', 'TriangleShelfFactory', 'BookColumnFactory', 'BookFactory',
+#  'BookStackFactory', 'SinkFactory', 'TapFactory', 'VaseFactory', 'TableCocktailFactory',
+#  'CoffeeTableFactory', 'SideTableFactory', 'TableDiningFactory', 'TableTopFactory', 'BottleFactory', 'BowlFactory',
+#  'CanFactory', 'ChopsticksFactory', 'CupFactory', 'FoodBagFactory', 'FoodBoxFactory', 'ForkFactory',
+#  'SpatulaFactory', 'FruitContainerFactory', 'JarFactory', 'KnifeFactory', 'LidFactory', 'PanFactory',
 #  'LargePlantContainerFactory', 'PlantContainerFactory', 'PlateFactory', 'PotFactory', 'SpoonFactory', 'WineglassFactory']
 
 #### 4. generate rule code
@@ -251,4 +250,54 @@ wallfurn = furniture.related_to(rooms, cu.against_wall)
 {vars_definition}
 
 * Here is your response of the constraints code: *
+"""
+
+
+#### 5.generate position
+
+step_5_position_prompt_system = """
+You are an experienced layout designer to design a 3D scene. 
+Your goal is to help me place 3D objects into the scene.
+
+**3D Convention:**
+- Right-handed coordinate system.
+- The X-Y plane is the floor; the Z axis points up. The origin is at a corner, defining the global frame.
+- Asset front faces point along the positive X axis. The Z axis points up. The local origin is centered in X-Y and at the bottom in Z. 
+A 90-degree Z rotation means that the object will face the positive Y axis. The bounding box aligns with the assets local frame.
+
+
+You will receive:
+1. The roomtype you need to design.
+2. The room size in width and height.
+3. Furnitures that exist in this room with counts.
+4. A list of furnitures that stand with back against the wall
+5. Relation between different furniture categories. 
+
+You need to return a dict including:
+1. X-Y Position and Z rotation of each furniture.
+
+Here is the example: 
+{
+    "Roomtype": "Bedroom",
+    "Roomsize": [3, 4],
+    "Category list of big object": {"bed":"1", "wardrobe":"1", "nightstand":"2", "bench":"1"},
+    "Object against the wall": ["bed", "wardrobe", "nightstand"],
+    "Relation between big objects": [["nightstand", "bed", "side_by_side"], ["bench", "bed", "front_to_front"]],
+    "Placement": {"bed": {"1": {"position": [1,1.5], "rotation": 0}}, 
+                    "wardrobe": {"1": {"position": [1,3.5], "rotation": 270}}, 
+                    "nightstand": {"1": {"position": [0.25,0.25], "rotation": 0}, "2": {"position": [0.25,2.75], "rotation": 0}}, 
+                      "bench": {"1": {"position": [2.25,1.5], "rotation": 180}}}
+}
+
+"""
+
+step_5_position_prompt_user = """
+Here is the given room info:
+"Roomtype": {roomtype}
+"Roomsize": {roomsize}
+"Category list of big object": {big_category_dict}
+"Object against the wall": {category_against_wall}
+"Relation between big objects": {relation_big_object}
+
+Here is your response of "Placement" (must return a complete dictionary):
 """

@@ -73,13 +73,49 @@ def extract_data(input_string):
 
 def lst2str(lst):
     if isinstance(lst[0], list):
-        s = ["["+", ".join(i)+"]" for i in lst]
+        s = ["["+", ".join(list(map(str, i)))+"]" for i in lst]
         s = "\n".join(s)
         return s
     else:
+        lst = list(map(str, lst))
         return "["+", ".join(lst)+"]"
 
+def dict2str(d, indent=0):
+    """
+    Convert a dictionary into a formatted string.
     
+    Parameters:
+    - d: dict, the dictionary to convert.
+    - indent: int, the current indentation level (used for nested structures).
+    
+    Returns:
+    - str: The string representation of the dictionary.
+    """
+    if not isinstance(d, dict):
+        raise ValueError("Input must be a dictionary")
+
+    result = []
+    indent_str = " " * (indent * 4)  # Indentation for nested levels
+
+    for key, value in d.items():
+        if isinstance(value, dict):
+            # Recursively handle nested dictionaries
+            result.append(f"{indent_str}{key}: {{\n{dict2str(value, indent + 1)}\n{indent_str}}}")
+        elif isinstance(value, list):
+            # Handle lists
+            list_str = ", ".join(
+                dict2str(item, indent + 1) if isinstance(item, dict) else str(item)
+                for item in value
+            )
+            result.append(f"{indent_str}{key}: [{list_str}]")
+        else:
+            # Handle other types
+            result.append(f"{indent_str}{key}: {repr(value)}")
+
+    return "{"+",\n".join(result)+"}"
+
+big_category_dict = {"x":1,"c":213}
+x=dict2str(big_category_dict)
 
 gpt = gpt()
 
@@ -96,6 +132,7 @@ print(gpt_text_response)
 
 # response = [i for i in gpt_text_response.split("\n") if len(i)>0]
 gpt_dict_response = extract_json(gpt_text_response)
+roomsize = gpt_dict_response["Roomsize"]
 big_category_dict = gpt_dict_response["Category list of big object"]
 big_category_list = list(big_category_dict.keys())
 category_against_wall = gpt_dict_response["Object against the wall"]
@@ -106,6 +143,30 @@ relation_big_object = gpt_dict_response["Relation between big objects"]
 # # Category list of big objects: [1 checkout counter, 5 bookshelves, 2 reading tables, 8 chairs]
 # # Object against the wall: [bookshelves]
 # # Relation between big objects: [chair, reading table, front_against]
+
+
+
+##### 5  generate position
+big_category_dict_str = dict2str(big_category_dict)
+category_against_wall_str = lst2str(category_against_wall)
+relation_big_object_str = lst2str(relation_big_object)
+roomsize_str = lst2str(roomsize)
+
+user_prompt = prompts.step_5_position_prompt_user.format(big_category_dict=big_category_dict_str,
+                                                           category_against_wall = category_against_wall_str,
+                                                           relation_big_object = relation_big_object_str,
+                                                           roomtype=roomtype,
+                                                           roomsize=roomsize_str)
+
+prompt_payload = gpt.get_payload(prompts.step_5_position_prompt_system, user_prompt)
+gpt_text_response = gpt(payload=prompt_payload, verbose=True)
+print(gpt_text_response)
+
+# gpt_text_response = '{\n    "Roomtype": "Bookstore",\n    "list of given category names": ["sofa", "armchair", "coffee table", "TV stand", "large shelf", "side table", "floor lamp", "remote control", "book", "magazine", "decorative bowl", "photo frame", "vase", "candle", "coaster", "plant"],\n    "Mapping results": {\n        "sofa": "seating.SofaFactory",\n        "armchair": "seating.ArmChairFactory",\n        "coffee table": "tables.CoffeeTableFactory",\n        "TV stand": "shelves.TVStandFactory",\n        "large shelf": "shelves.LargeShelfFactory",\n        "side table": "tables.SideTableFactory",\n        "floor lamp": "lamp.FloorLampFactory",\n        "remote control": null,\n        "book": "table_decorations.BookStackFactory",\n        "magazine": null,\n        "decorative bowl": "tableware.BowlFactory",\n        "photo frame": null,\n        "vase": "table_decorations.VaseFactory",\n        "candle": null,\n        "coaster": null,\n        "plant": "tableware.PlantContainerFactory"\n    }\n}'
+
+gpt_dict_response = extract_json(gpt_text_response.replace("'","\"").replace("None", "null"))
+Placement = gpt_dict_response["Placement"]
+
 
 
 #### 2. get small object and relation
@@ -236,6 +297,8 @@ gpt_text_response = gpt_text_response.replace("{{","{").replace("}}","}")
 print(gpt_text_response)
 
 
+results["roomtype"] = roomtype
+results["roomsize"] = roomsize
 results["big_category_dict"] = big_category_dict
 results["category_against_wall"] = category_against_wall
 results["relation_big_object"] = relation_big_object
@@ -243,5 +306,7 @@ results["small_category_list"] = small_category_list
 results["relation_small_object"] = relation_small_object
 results["name_mapping"] = name_mapping
 results["gpt_text_response"] = gpt_text_response
+results["Placement"] = Placement
+
 with open("results.json","w") as f:
     json.dump(results,f,indent=4)

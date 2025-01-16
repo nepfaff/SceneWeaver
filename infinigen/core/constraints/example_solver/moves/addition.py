@@ -15,6 +15,7 @@ from infinigen.assets.utils import bbox_from_mesh
 from infinigen.core import tagging
 from infinigen.core import tags as t
 from infinigen.core.constraints import usage_lookup
+from infinigen.core.constraints.constraint_language import util as iu
 from infinigen.core.constraints.constraint_language.util import delete_obj
 from infinigen.core.constraints.example_solver.geometry import (
     dof,
@@ -24,7 +25,6 @@ from infinigen.core.constraints.example_solver.geometry import (
 from infinigen.core.constraints.example_solver.state_def import ObjectState, State
 from infinigen.core.placement.factory import AssetFactory
 from infinigen.core.util import blender as butil
-from infinigen.core.constraints.constraint_language import util as iu
 
 from . import moves
 from .reassignment import pose_backup, restore_pose_backup
@@ -133,9 +133,18 @@ class Addition(moves.Move):
         #     a = 1
         logger.debug(f"{self} {success=}")
         return success
-    
-    def apply_init(self, state: State, target_name, size, position, orientation, gen_class, meshpath, expand_collision=False):  # mark
-        
+
+    def apply_init(
+        self,
+        state: State,
+        target_name,
+        size,
+        position,
+        rotation,
+        gen_class,
+        meshpath,
+        expand_collision=False,
+    ):  # mark
         assert target_name not in state.objs
 
         self._new_obj, gen = sample_rand_placeholder(gen_class)
@@ -153,14 +162,15 @@ class Addition(moves.Move):
         )
 
         state.objs[target_name] = objstate
-        
-        name = "SofaFactory(1351066).bbox_placeholder(2179127)"
+
+        # name = "SofaFactory(1351066).bbox_placeholder(2179127)"
+        name = self._new_obj.name
         iu.translate(state.trimesh_scene, name, position)
-        iu.rotate(state.trimesh_scene, name, np.array([0,0,1]), 10)
+        iu.rotate(state.trimesh_scene, name, np.array([0, 0, 1]), rotation)
 
         save_path = "debug.blend"
         bpy.ops.wm.save_as_mainfile(filepath=save_path)
-        
+
         return True
 
     def revert(self, state: State):

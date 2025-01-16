@@ -41,11 +41,14 @@ class RoomSolver:
             self.graph_maker = GraphMaker(factory_seed)
             # self.graph = self.graph_maker.make_graph(np.random.randint(1e7))
             self.graph = self.graph_maker.make_graph_singleroom(np.random.randint(1e7))
-            self.width, self.height = self.graph_maker.suggest_dimensions(self.graph)
+            # self.width, self.height = self.graph_maker.suggest_dimensions(self.graph)
+            self.width, self.height = 5,7
             self.contour_factory = ContourFactory(self.width, self.height)
             # self.contour = self.contour_factory.make_contour(np.random.randint(1e7))
-            self.contour = self.contour_factory.make_contour_singleroom(np.random.randint(1e7))
-            
+            self.contour = self.contour_factory.make_contour_singleroom(
+                np.random.randint(1e7)
+            )
+
             n = len(self.graph.neighbours)
 
             self.segment_maker = SegmentMaker(self.factory_seed, self.contour, n)
@@ -63,7 +66,7 @@ class RoomSolver:
         参数：
         - assignment: 当前房间的分配方案。
         - info: 包含几何和关系信息的字典。
-        
+
         返回：
         - assignment: 优化后的房间分配方案。
         - info: 更新后的房间信息。

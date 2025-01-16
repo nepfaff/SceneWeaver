@@ -124,7 +124,7 @@ class SegmentMaker:
                         segments[k], segments[i + 1] = s_, t_  # 更新段
                         break  # 成功分割后退出尝试
         return {k: v for k, v in segments.items()}  # 返回所有段
-    
+
     def divide_segments_singleroom(self):
         # 初始化段，包含初始轮廓
         segments = {0: self.contour}

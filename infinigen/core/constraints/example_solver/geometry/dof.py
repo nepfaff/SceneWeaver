@@ -181,7 +181,7 @@ def check_init_valid(
 
     dof_remaining = True  # Degree of freedom remaining after the first alignment
 
-    # Check and apply rotations for subsequent planes 
+    # Check and apply rotations for subsequent planes
     # # 对后续平面进行检查和旋转
     for i in range(1, len(obj_planes)):
         a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(i)  # z axies
@@ -238,7 +238,7 @@ def check_init_valid(
     A = np.array(A)
     c = np.array(c)
 
-    t, residuals, rank, s = np.linalg.lstsq(A, c, rcond=None) # 最小二乘法求解
+    t, residuals, rank, s = np.linalg.lstsq(A, c, rcond=None)  # 最小二乘法求解
     a_obj_name, a_poly_index = obj_planes[0]
 
     a_obj = bpy.data.objects[a_obj_name]
@@ -544,8 +544,12 @@ def try_apply_relation_constraints(
         if validity.check_post_move_validity(
             state, name, expand_collision=expand_collision
         ):
-            obj_state.dof_matrix_translation = combined_stability_matrix(parent_planes) #平移自由度的合成约束矩阵。
-            obj_state.dof_rotation_axis = combine_rotation_constraints(parent_planes)  #旋转自由度的约束轴或限制信息。
+            obj_state.dof_matrix_translation = combined_stability_matrix(
+                parent_planes
+            )  # 平移自由度的合成约束矩阵。
+            obj_state.dof_rotation_axis = combine_rotation_constraints(
+                parent_planes
+            )  # 旋转自由度的约束轴或限制信息。
 
             # if "SimpleDeskFactory(7246963).bbox_placeholder(2397337" in state.objs[name].obj.name:
             #     import pdb

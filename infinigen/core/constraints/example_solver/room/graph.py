@@ -166,7 +166,7 @@ class GraphMaker:
                 room_graph = RoomGraph(children_, rooms, entrance)
                 if self.satisfies_constraint(room_graph):  # 检查图是否满足约束
                     return room_graph
-                
+
     def make_graph(self, i):  # 用于生成房间图的核心方法
         with FixedSeed(i):
             for _ in range(self.max_samples):  # 尝试多次生成以满足约束
