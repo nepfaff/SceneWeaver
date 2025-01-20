@@ -28,6 +28,7 @@ from infinigen.core.constraints.example_solver.geometry import planes as planes
 from infinigen.core.util import blender as butil
 
 # import fcl
+from infinigen_examples.util.visible import invisible_others, visible_others
 
 
 logger = logging.getLogger(__name__)
@@ -88,12 +89,13 @@ def project_vector(vector, origin, normal):
 
 
 @gin.configurable
-def stable_against(
+def  stable_against(
     state: state_def.State,
     obj_name: str,
     relation_state: state_def.RelationState,
     visualize=False,
     allow_overhangs=False,
+    use_initial = False
 ):
     # 这个函数stable_against主要用于检查两个对象在三维空间中的稳定性。
     # 首先，它获取相关的对象和它们的平面表示。
@@ -160,6 +162,24 @@ def stable_against(
         res = projected_a.overlaps(projected_b)
     elif relation.check_z:
         res = projected_a.within(projected_b.buffer(1e-2))
+        if use_initial and not res:
+            move_vectors = []
+            veritces = list(np.array(projected_a.exterior.coords))
+            for point in veritces:
+                p = Point(point)
+                if projected_b.contains(p):
+                    continue
+                closest_point = projected_b.exterior.interpolate(projected_b.exterior.project(p))
+                move_vector = [closest_point.x - p.x, closest_point.y - p.y]
+                move_vectors.append(np.array(move_vector)[None,:]/np.linalg.norm(np.array(move_vector)))
+                
+            gradient = np.sum(np.concatenate(move_vectors, axis=0), axis=0)
+            gradient = [gradient[0],gradient[1],0]
+            TRANS_MULT = 0.1
+            translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
+            iu.translate(state.trimesh_scene, sa.obj.name, translation)
+            
+
     else:
         z_proj = project_vector(np.array([0, 0, 1]), origin_b, normal_b)
         projected_a_rotated, projected_b_rotated = project_and_align_z_with_x(
@@ -167,8 +187,7 @@ def stable_against(
         )
         res = is_vertically_contained(projected_a_rotated, projected_b_rotated)
 
-    # if obj_name=="850732_BookFactory":
-    #     visualize=True
+
     if visualize:
         fig, ax = plt.subplots()
         iu.plot_geometry(ax, projected_a, "blue")
@@ -192,7 +211,7 @@ def stable_against(
     return True
 
 
-def snap_against(scene, a, b, a_plane, b_plane, margin=0):
+def snap_against(scene, a, b, a_plane, b_plane, margin=0, rev_normal=False):
     """
     snap a against b with some margin.
     将对象 `a` 对齐到对象 `b` 的指定平面上，同时允许指定一个间距（margin）。
@@ -204,7 +223,7 @@ def snap_against(scene, a, b, a_plane, b_plane, margin=0):
     - b_plane: 对象 `b` 的平面定义，包含平面索引信息。
     - margin: 对齐时的间距（单位为 Blender 的单位）。
     """
-    logging.debug("snap_against", a, b, a_plane, b_plane, margin)
+    logging.debug("snap_against", a, b, a_plane, b_plane, margin, rev_normal)
 
     a_obj = bpy.data.objects[a]
     b_obj = bpy.data.objects[b]
@@ -214,15 +233,15 @@ def snap_against(scene, a, b, a_plane, b_plane, margin=0):
     b_poly_index = b_plane[1]
     b_poly = b_obj.data.polygons[b_poly_index]
     # 获取平面 `a` 和 `b` 上顶点的全局坐标。
-    plane_point_a = iu.global_vertex_coordinates(
+    plane_point_a = butil.global_vertex_coordinates(
         a_obj, a_obj.data.vertices[a_poly.vertices[0]]
     )
     # 获取平面 `a` 和 `b` 的法向量。
-    plane_normal_a = iu.global_polygon_normal(a_obj, a_poly)
-    plane_point_b = iu.global_vertex_coordinates(
+    plane_normal_a = butil.global_polygon_normal(a_obj, a_poly)
+    plane_point_b = butil.global_vertex_coordinates(
         b_obj, b_obj.data.vertices[b_poly.vertices[0]]
     )
-    plane_normal_b = iu.global_polygon_normal(b_obj, b_poly)
+    plane_normal_b = butil.global_polygon_normal(b_obj, b_poly, rev_normal)
     plane_normal_b = -plane_normal_b
     # 确保平面法向量的长度为 1，否则报错。
     norm_mag_a = np.linalg.norm(plane_normal_a)
@@ -247,10 +266,10 @@ def snap_against(scene, a, b, a_plane, b_plane, margin=0):
     a_obj = bpy.data.objects[a]
     a_poly = a_obj.data.polygons[a_poly_index]
     # Recalculate vertex_a and normal_a after rotation
-    plane_point_a = iu.global_vertex_coordinates(
+    plane_point_a = butil.global_vertex_coordinates(
         a_obj, a_obj.data.vertices[a_poly.vertices[0]]
     )
-    plane_normal_a = iu.global_polygon_normal(a_obj, a_poly)
+    plane_normal_a = butil.global_polygon_normal(a_obj, a_poly)
     # 计算平面 `a` 和 `b` 之间的距离（沿 `b` 平面法向量方向）。
     distance = (plane_point_a - plane_point_b).dot(plane_normal_b)
     # 计算平移向量，将对象 `a` 移动到与 `b` 对齐的目标位置，并考虑指定的 `margin`。

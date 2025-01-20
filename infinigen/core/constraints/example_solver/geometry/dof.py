@@ -112,7 +112,7 @@ def rotate_object_around_axis(obj, axis, std, angle=None):
 
 
 def check_init_valid(
-    state: state_def.State, name: str, obj_planes: list, assigned_planes: list, margins
+    state: state_def.State, name: str, obj_planes: list, assigned_planes: list, margins, rev_normals: list[bool],
 ):
     """
     检查初始对齐是否有效。 return translation
@@ -140,6 +140,7 @@ def check_init_valid(
 
         a_plane = obj_planes[ind]
         b_plane = assigned_planes[ind]
+        rev_normal = rev_normals[ind]
         a_obj = bpy.data.objects[a]
         b_obj = bpy.data.objects[b]
 
@@ -147,8 +148,9 @@ def check_init_valid(
         a_poly = a_obj.data.polygons[a_poly_index]
         b_poly_index = b_plane[1]
         b_poly = b_obj.data.polygons[b_poly_index]
-        plane_normal_a = iu.global_polygon_normal(a_obj, a_poly)
-        plane_normal_b = iu.global_polygon_normal(b_obj, b_poly)
+        plane_normal_a = butil.global_polygon_normal(a_obj, a_poly)
+        plane_normal_b = butil.global_polygon_normal(b_obj, b_poly, rev_normal)
+        # plane_normal_b = iu.global_polygon_normal(b_obj, b_poly)
         plane_normal_b = -plane_normal_b
         rotation_axis = np.cross(plane_normal_a, plane_normal_b)
 
@@ -212,6 +214,7 @@ def check_init_valid(
         a_obj_name, a_poly_index = obj_planes[i]
         b_obj_name, b_poly_index = assigned_planes[i]
         margin = margins[i]
+        rev_normal = rev_normals[i]
         # 获取平面的全局坐标和法向量
         a_obj = bpy.data.objects[a_obj_name]
         b_obj = bpy.data.objects[b_obj_name]
@@ -220,13 +223,14 @@ def check_init_valid(
         b_poly = b_obj.data.polygons[b_poly_index]
 
         # Get global coordinates and normals
-        plane_point_a = iu.global_vertex_coordinates(
+        plane_point_a = butil.global_vertex_coordinates(
             a_obj, a_obj.data.vertices[a_poly.vertices[0]]
         )
-        plane_point_b = iu.global_vertex_coordinates(
+        plane_point_b = butil.global_vertex_coordinates(
             b_obj, b_obj.data.vertices[b_poly.vertices[0]]
         )
-        plane_normal_b = iu.global_polygon_normal(b_obj, b_poly)
+        plane_normal_b = butil.global_polygon_normal(b_obj, b_poly, rev_normal)
+        # plane_normal_b = iu.global_polygon_normal(b_obj, b_poly)
         plane_point_b += plane_normal_b * margin
         # 构造线性方程组 Ax = c
         # Append to the matrix A and vector b for Ax = c
@@ -273,6 +277,7 @@ def project(points, plane_normal):
 def apply_relations_surfacesample(
     state: state_def.State,
     name: str,
+    use_initial=False
 ):
     obj_state = state.objs[name]  # 获取指定对象的状态
     obj_name = obj_state.obj.name
@@ -282,7 +287,9 @@ def apply_relations_surfacesample(
     obj_planes = []  # 对象平面列表
     margins = []  # 边距列表
     parent_tag_list = []  # 父标签列表
-
+    relations = []
+    rev_normals = []
+    
     # 检查对象是否有关系
     # 抛出异常：对象没有关系
     if len(obj_state.relations) == 0:
@@ -321,12 +328,28 @@ def apply_relations_surfacesample(
         parent_planes.append(parent_plane)
         parent_objs.append(parent_obj)
         match relation_state.relation:  # 根据关系类型执行不同操作
-            case cl.StableAgainst(_child_tags, parent_tags, margin):
+            case cl.StableAgainst(
+                _child_tags, parent_tags, margin, _check_z, rev_normal
+            ):
                 margins.append(margin)  # 添加边距
                 parent_tag_list.append(parent_tags)  # 添加父标签
+                relations.append(relation_state.relation)
+                rev_normals.append(rev_normal)
             case cl.SupportedBy(_parent_tags, parent_tags):
                 margins.append(0)  # 添加零边距
                 parent_tag_list.append(parent_tags)  # 添加父标签
+                relations.append(relation_state.relation)
+                rev_normals.append(False)
+            case cl.CoPlanar(_child_tags, parent_tags, margin, rev_normal):
+                margins.append(margin)
+                parent_tag_list.append(parent_tags)
+                relations.append(relation_state.relation)
+                rev_normals.append(rev_normal)
+            case cl.Touching(_child_tags, parent_tags, margin):
+                margins.append(margin)
+                parent_tag_list.append(parent_tags)
+                relations.append(relation_state.relation)
+                rev_normals.append(False)
             case _:
                 raise NotImplementedError  # 抛出未实现的异常
 
@@ -337,7 +360,10 @@ def apply_relations_surfacesample(
     # print(obj_planes)
     # print([i.parent_plane_idx for i in obj_state.relations])
     # print(parent_planes)
-    valid, dof, T = check_init_valid(state, name, obj_planes, parent_planes, margins)
+    valid, dof, T = check_init_valid(
+        state, name, obj_planes, parent_planes, margins, rev_normals
+    )
+    # valid, dof, T = check_init_valid(state, name, obj_planes, parent_planes, margins)
     if not valid:
         rels = [(rels.relation, rels.target_name) for rels in obj_state.relations]
         logger.warning(f"Init was invalid for {name=} {rels=}")
@@ -359,6 +385,9 @@ def apply_relations_surfacesample(
         margin2 = margins[1]
         obj_plane1 = obj_planes[0]
         obj_plane2 = obj_planes[1]
+        relation2 = relations[1]
+        rev_normal1 = rev_normals[0]
+        rev_normal2 = rev_normals[1]
         # 获取父对象的标记子网
         parent1_trimesh = state.planes.get_tagged_submesh(
             state.trimesh_scene, parent_obj1.name, parent_tags1, parent_plane1
@@ -383,7 +412,7 @@ def apply_relations_surfacesample(
         # 检查所有投影点是否在父平面内
         if all(
             [p1_to_p1.buffer(1e-1).contains(Point(pt[0], pt[1])) for pt in projected]
-        ):
+        ) and (not isinstance(relation2, cl.CoPlanar)):
             face_mask = tagging.tagged_face_mask(parent_obj2, parent_tags2)
             stability.move_obj_random_pt(
                 state, obj_name, parent_obj2.name, face_mask, parent_plane2
@@ -395,6 +424,7 @@ def apply_relations_surfacesample(
                 obj_plane2,
                 parent_plane2,
                 margin=margin2,
+                rev_normal=rev_normal2,
             )  # 对齐到父平面 rotation
             stability.snap_against(
                 state.trimesh_scene,
@@ -403,6 +433,7 @@ def apply_relations_surfacesample(
                 obj_plane1,
                 parent_plane1,
                 margin=margin1,
+                rev_normal=rev_normal1,
             )
         else:
             face_mask = tagging.tagged_face_mask(parent_obj1, parent_tags1)
@@ -416,6 +447,7 @@ def apply_relations_surfacesample(
                 obj_plane1,
                 parent_plane1,
                 margin=margin1,
+                rev_normal=rev_normal1,
             )
             stability.snap_against(
                 state.trimesh_scene,
@@ -424,6 +456,7 @@ def apply_relations_surfacesample(
                 obj_plane2,
                 parent_plane2,
                 margin=margin2,
+                rev_normal=rev_normal2,
             )
 
     elif dof == 2:  # 自由度为2
@@ -438,21 +471,23 @@ def apply_relations_surfacesample(
                 continue
             if parent_plane is None:  # 检查父平面是否存在
                 continue
-            iu.set_rotation(
-                state.trimesh_scene,
-                obj_name,
-                (0, 0, 2 * np.pi * np.random.randint(0, 4) / 4),  # 随机旋转对象
-            )
+            if not use_initial:
+                iu.set_rotation(
+                    state.trimesh_scene,
+                    obj_name,
+                    (0, 0, 2 * np.pi * np.random.randint(0, 4) / 4),  # 随机旋转对象
+                )
             face_mask = tagging.tagged_face_mask(
                 parent_obj, relation_state.relation.parent_tags
             )
-            stability.move_obj_random_pt(
-                state, obj_name, parent_obj.name, face_mask, parent_plane
-            )  # 随机移动对象
+            if not use_initial:
+                stability.move_obj_random_pt(
+                    state, obj_name, parent_obj.name, face_mask, parent_plane
+                )  # 随机移动对象
 
             # 根据关系类型进行对齐
             match relation_state.relation:
-                case cl.StableAgainst(_, parent_tags, margin):
+                case cl.CoPlanar:
                     stability.snap_against(
                         state.trimesh_scene,
                         obj_name,
@@ -460,8 +495,22 @@ def apply_relations_surfacesample(
                         obj_plane,
                         parent_plane,
                         margin=margin,
+                        rev_normal=relation_state.relation.rev_normal,
+                    )
+                case cl.StableAgainst(_, parent_tags, margin, _check_z, rev_normal):
+                    stability.snap_against(
+                        state.trimesh_scene,
+                        obj_name,
+                        parent_obj.name,
+                        obj_plane,
+                        parent_plane,
+                        margin=margin,
+                        rev_normal=rev_normal,
                     )
                 case cl.SupportedBy(_, parent_tags):
+                    stability.move_obj_random_pt(
+                        state, obj_name, parent_obj.name, face_mask, parent_plane
+                    )
                     stability.snap_against(
                         state.trimesh_scene,
                         obj_name,
@@ -469,6 +518,7 @@ def apply_relations_surfacesample(
                         obj_plane,
                         parent_plane,
                         margin=0,
+                        rev_normal=False,
                     )
                 case _:
                     raise NotImplementedError  # 抛出未实现的异常
@@ -492,6 +542,7 @@ def try_apply_relation_constraints(
     n_try_resolve=10,
     visualize=False,
     expand_collision=False,
+    use_initial=False
 ):
     """
     name is in objs.name
@@ -523,8 +574,7 @@ def try_apply_relation_constraints(
                 f"Object {obj_state.obj.name} is too tall for the room: {obj_state.obj.dimensions[2]}, {WALL_HEIGHT=}, {WALL_THICKNESS=}"
             )
         # 应用关系以对某个对象进行表面采样 and move object
-        parent_planes = apply_relations_surfacesample(state, name)
-
+        parent_planes = apply_relations_surfacesample(state, name, use_initial=use_initial)
         # assignments not valid
         if parent_planes is None:
             logger.debug(f"Found {parent_planes=} for {name=} {retry=}")
@@ -541,9 +591,13 @@ def try_apply_relation_constraints(
         # invisible_others()
         # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         # visible_others()
+        # if not validity.check_post_move_validity(
+        #     state, name, expand_collision=expand_collision
+        # ):
+        #     print("not valid ",name)
         if validity.check_post_move_validity(
             state, name, expand_collision=expand_collision
-        ):
+        ) or use_initial:
             obj_state.dof_matrix_translation = combined_stability_matrix(
                 parent_planes
             )  # 平移自由度的合成约束矩阵。

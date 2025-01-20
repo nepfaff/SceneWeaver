@@ -191,8 +191,15 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
 
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
     def init_graph():
-        solver.init_graph()
-        # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        assignments = greedy.iterate_assignments(
+            stages["on_floor"], state, all_vars, limits, nonempty=True
+        )
+        for i, vars in enumerate(assignments):
+            solver.init_graph(
+                stages["on_floor"],
+                var_assignments=vars,
+            )
+            # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         return solver.state
 
     state = p.run_stage("init_graph", init_graph, use_chance=False, default=state)
@@ -397,6 +404,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         lambda: room_dec.populate_doors(solver.get_bpy_objects(door_filter)),
         use_chance=False,
     )
+
     p.run_stage(
         "room_windows",
         lambda: room_dec.populate_windows(solver.get_bpy_objects(window_filter)),

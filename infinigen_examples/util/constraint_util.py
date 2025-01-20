@@ -21,6 +21,7 @@ room_types = {
     t.Semantics.DiningRoom,
     t.Semantics.Utility,
     t.Semantics.Staircase,
+    t.Semantics.NewRoom,
 }
 
 all_sides = {t.Subpart.Bottom, t.Subpart.Top, t.Subpart.Front, t.Subpart.Back}
@@ -73,9 +74,6 @@ spaced_wall = cl.StableAgainst(back, walltags, margin=0.8)
 hanging = cl.StableAgainst(top, ceilingtags, margin=0.05)
 side_against_wall = cl.StableAgainst(side, walltags, margin=0.05)
 
-# back_coplanar_back = cl.CoPlanar(back, back, margin=0.05, rev_normal=True)
-# front_coplanar_front = cl.CoPlanar(front, front, margin=0.05, rev_normal=True)
-
 ontop = cl.StableAgainst(bottom, top)
 on = cl.StableAgainst(bottom, {t.Subpart.SupportSurface})
 
@@ -85,9 +83,16 @@ front_against = cl.StableAgainst(
 
 front_to_front = cl.StableAgainst(front, front, margin=0.05, check_z=False)
 
-leftright_leftright = cl.StableAgainst(leftright, leftright, margin=0.5)  # YYD 0.5
+leftright_leftright = cl.StableAgainst(leftright, leftright, margin=0.05)  # YYD 0.5
 side_by_side = cl.StableAgainst(side, side)
 back_to_back = cl.StableAgainst(back, back)
 
 variable_room = t.Variable("room")
 variable_obj = t.Variable("obj")
+
+#New
+
+back_coplanar_back = cl.CoPlanar(back, back, margin=0.05, rev_normal=True)
+front_coplanar_front = cl.CoPlanar(front, front, margin=0.05, rev_normal=True)
+
+# face_to = 

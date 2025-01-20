@@ -17,11 +17,9 @@ from infinigen.core import tags as t
 from infinigen.core.constraints import usage_lookup
 from infinigen.core.constraints.constraint_language import util as iu
 from infinigen.core.constraints.constraint_language.util import delete_obj
-from infinigen.core.constraints.example_solver.geometry import (
-    dof,
-    parse_scene,
-    validity,
-)
+
+from infinigen.core.constraints.example_solver.geometry import dof, parse_scene, validity
+
 from infinigen.core.constraints.example_solver.state_def import ObjectState, State
 from infinigen.core.placement.factory import AssetFactory
 from infinigen.core.util import blender as butil
@@ -168,10 +166,16 @@ class Addition(moves.Move):
         iu.translate(state.trimesh_scene, name, position)
         iu.rotate(state.trimesh_scene, name, np.array([0, 0, 1]), rotation)
 
-        save_path = "debug.blend"
-        bpy.ops.wm.save_as_mainfile(filepath=save_path)
+        success = dof.try_apply_relation_constraints(
+            state, target_name, expand_collision=expand_collision,n_try_resolve=1, use_initial=True
+        )  # check
+        logger.debug(f"{self} {success=}")
+        return success
 
-        return True
+        # save_path = "debug.blend"
+        # bpy.ops.wm.save_as_mainfile(filepath=save_path)
+
+        
 
     def revert(self, state: State):
         to_delete = list(butil.iter_object_tree(self._new_obj))

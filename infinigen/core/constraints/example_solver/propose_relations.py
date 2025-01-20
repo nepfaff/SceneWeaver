@@ -132,6 +132,10 @@ def find_assignments(
     candidates = objkeys_in_dom(dom, curr)
     random.shuffle(candidates)
 
+    if len(candidates) == 0: #YYD add
+        yield assignments
+        return
+
     for parent_candidate_name in candidates:  # 遍历候选对象
         logging.debug(f"{parent_candidate_name=}")  # 调试信息
         # 获取当前候选对象的状态

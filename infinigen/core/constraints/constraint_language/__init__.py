@@ -31,7 +31,7 @@ from .geometry import (
 from .relations import (
     AnyRelation,
     ConnectorType,
-    # CoPlanar,
+    CoPlanar,
     CutFrom,
     GeometryRelation,
     NegatedRelation,

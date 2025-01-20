@@ -43,7 +43,14 @@ def domain_contains(dom: r.Domain, state: state_def.State, obj: state_def.Object
     return True
 
 
+# def objkeys_in_dom(dom: r.Domain, curr: state_def.State):
+#     return [
+#         k for k, o in curr.objs.items() if domain_contains(dom, curr, o) and o.active
+#     ]
+
 def objkeys_in_dom(dom: r.Domain, curr: state_def.State):
-    return [
-        k for k, o in curr.objs.items() if domain_contains(dom, curr, o) and o.active
-    ]
+    lst = []
+    for k, o in curr.objs.items():
+        if domain_contains(dom, curr, o) and o.active:
+            lst.append(k)
+    return lst

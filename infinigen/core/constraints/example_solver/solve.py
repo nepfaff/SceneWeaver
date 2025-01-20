@@ -44,6 +44,7 @@ from infinigen.assets.objects import (
         )
 from infinigen.core.constraints import usage_lookup
 import math
+from . import moves, propose_relations, state_def
 
 import importlib
 from infinigen.core import tags as t
@@ -243,7 +244,7 @@ class Solver:
         # ra = (
         #     trange(n_steps) if self.optim.print_report_freq == 0 else range(n_steps)
         # )  # range(0, 150)
-        ra = trange(n_steps) if self.optim.print_report_freq == 0 else range(n_steps)
+        ra = trange(n_steps) if self.optim.print_report_freq == 0 else range(n_steps*2)
 
         # 进行迭代
         for j in ra:
@@ -251,6 +252,8 @@ class Solver:
             # if j==6:
 
             move_gen = self.choose_move_type(j, n_steps)  # 选择移动类型
+            while move_gen.__name__ != "propose_translate":
+                move_gen = self.choose_move_type(j, n_steps)  # 选择移动类型
             # print(move_gen , "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             self.optim.step(
                 consgraph, self.state, move_gen, filter_domain, expand_collision
@@ -290,6 +293,8 @@ class Solver:
     @gin.configurable
     def init_graph(
         self,
+        filter_domain: r.Domain,
+        var_assignments: dict[str, str],
     ):
         name_mapping = {
                             "Sofa": "seating.SofaFactory",
@@ -320,10 +325,10 @@ class Solver:
                         "CoffeeTable": {"1": {"position": [2.5, 3.5], "rotation": 0}},
                         "TVStand": {"1": {"position": [2.5, 6.5], "rotation": 270}},
                         "TV": {"1": {"position": [2.5, 6.25], "rotation": 270}},
-                        "BookColumn": {
-                            "1": {"position": [0.5, 6.5], "rotation": 270},
-                            "2": {"position": [4.5, 6.5], "rotation": 270}
-                        },
+                        # "BookColumn": {
+                        #     "1": {"position": [0.5, 6.5], "rotation": 270},
+                        #     "2": {"position": [4.5, 6.5], "rotation": 270}
+                        # },
                         "LargeShelf": {"1": {"position": [2.5, 0.5], "rotation": 90}},
                         "FloorLamp": {
                             "1": {"position": [1.5, 2], "rotation": 0},
@@ -335,6 +340,12 @@ class Solver:
                         }
                     }
         
+        dom_assignments = {
+            k: r.Domain(self.state.objs[objkey].tags)
+            for k, objkey in var_assignments.items()
+        }
+        filter_domain = r.substitute_all(filter_domain, dom_assignments)
+
         for key, value in info_dict.items():
             for num in value.keys():
                 position = value[num]["position"] + [0]
@@ -346,30 +357,34 @@ class Solver:
                 class_obj = getattr(module, class_name)
                 gen_class = class_obj
                 # gen_class = seating.SofaFactory
-                assignments = []
+                search_rels = filter_domain.relations
+                # 筛选出有效的关系，只选择非否定关系
+                search_rels = [
+                    rd for rd in search_rels if not isinstance(rd[0], cl.NegatedRelation)
+                ]
 
-                found_tags = usage_lookup.usages_of_factory(
-                    gen_class
-                )
-                
-                move = moves.Addition(
-                    names=[
-                        f"{np.random.randint(1e6):04d}_{gen_class.__name__}"
-                    ],  # decided later # 随机生成一个名称，基于生成器类的名称
-                    gen_class=gen_class,  # 使用传入的生成器类
-                    relation_assignments=assignments,  # 传入分配的关系
-                    temp_force_tags=found_tags,  # 临时强制标签
-                )
-                
-                target_name = f"{np.random.randint(1e7)}_{class_name}"
-                # target_name = np.random.randint(1e7)+"_SofaFactory"
-                size = ""
-                
-                meshpath = ""
+                assign = propose_relations.find_assignments(self.state, search_rels)
+                for i, assignments in enumerate(assign):
+                    found_tags = usage_lookup.usages_of_factory( gen_class )  
+                    move = moves.Addition(
+                        names=[
+                            f"{np.random.randint(1e6):04d}_{gen_class.__name__}"
+                        ],  # decided later # 随机生成一个名称，基于生成器类的名称
+                        gen_class=gen_class,  # 使用传入的生成器类
+                        relation_assignments=assignments,  # 传入分配的关系
+                        temp_force_tags=found_tags,  # 临时强制标签
+                    )
+                    
+                    target_name = f"{np.random.randint(1e7)}_{class_name}"
+                    # target_name = np.random.randint(1e7)+"_SofaFactory"
+                    size = ""
+                    
+                    meshpath = ""
 
-                move.apply_init(
-                    self.state, target_name, size, position, rotation, gen_class, meshpath
-                )
+                    move.apply_init(
+                        self.state, target_name, size, position, rotation, gen_class, meshpath
+                    )
+                    break
 
         return self.state
 

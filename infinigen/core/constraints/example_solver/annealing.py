@@ -215,7 +215,7 @@ class SimulatedAnnealingSolver:
             #         import pdb
             # pdb.set_trace()
 
-            succeeded = move.apply(state, expand_collision)  # 尝试应用移动到当前状态
+            succeeded = move.apply_gradient(state, expand_collision)  # 尝试应用移动到当前状态
 
             if succeeded:  # 如果成功应用
                 # (target_name,) = move.names

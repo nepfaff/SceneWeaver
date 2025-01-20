@@ -68,7 +68,7 @@ def check_pre_move_validity(scene, a, parent_dict, dx, dy):
     return True
 
 
-def all_relations_valid(state, name):
+def all_relations_valid(state, name, use_initial=False):
     rels = state.objs[name].relations
 
     for i, relation_state in enumerate(rels):
@@ -76,7 +76,7 @@ def all_relations_valid(state, name):
             case cl.StableAgainst(_child_tags, _parent_tags, _margin):
                 if "OfficeChairFactory" in name:
                     a = 1
-                res = stable_against(state, name, relation_state)
+                res = stable_against(state, name, relation_state, use_initial=use_initial)
                 # import pdb
                 # pdb.set_trace()
 
@@ -99,6 +99,8 @@ def check_post_move_validity(
     disable_collision_checking=False,
     visualize=False,
     expand_collision=False,
+    return_touch=False,
+    use_initial=False
 ):  # MARK
     # import pdb
     # pdb.set_trace()
@@ -113,30 +115,37 @@ def check_post_move_validity(
 
     if len(collision_objs) == 0:
         return True
-
+    # invisible_others()
+    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+    # visible_others()
     # check relation
-    if not all_relations_valid(state, name):
+    if name=="6870354_ArmChairFactory":
+        a = 1
+    if not all_relations_valid(state, name, use_initial=use_initial):
+        print("all_relations_valid not valid ",name)
         if visualize:
             vis_obj = butil.copy(objstate.obj)
             vis_obj.name = f"validity_relations_fail_{name}"
-
-        return False
+        if return_touch:
+            return False, None
+        else:
+            return False
 
     # check collision
     if disable_collision_checking:
         return True
     if t.Semantics.NoCollision in objstate.tags:
-        return True
-
+        if return_touch:
+            return True, None
+        else:
+            return True
     # objstate.obj.location
     # Vector((2.1989827156066895, 12.716106414794922, 0.8305753469467163))
     # objstate.obj.rotation_euler
     # Euler((0.0, -0.0, 1.570796012878418), 'XYZ')
     # if "SimpleBookcaseFactory" in name:
 
-    # invisible_others()
-    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-    # visible_others()
+    
 
     if expand_collision:
         touch = any_touching_expand(  # mark
@@ -161,15 +170,20 @@ def check_post_move_validity(
         logger.debug(
             f"validity failed - {name} touched {contact_names[0]} {len(contact_names)=}"
         )
-        return False
+        if return_touch:
+            return False, touch
+        else:
+            return False
 
     # available = path_to_door(  # mark
     #     scene, objstate.obj.name, collision_objs, bvh_cache=state.bvh_cache
     # )
 
     # supposed to go through the consgraph here
-
-    return True
+    if return_touch:
+        return False, touch
+    else:
+        return True
 
 
 # @gin.configurable

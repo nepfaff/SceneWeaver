@@ -152,8 +152,70 @@ def home_constraints():
     storage = wallfurn[Semantics.Storage]
 
     params = sample_home_constraint_params()
-    
+    score_terms["furniture_fullness"] = rooms.mean(
+        lambda r: (
+            furniture.related_to(r)
+            .volume(dims=(0, 1))
+            .safediv(r.volume(dims=(0, 1)))
+            .sub(params["furniture_fullness_pct"])
+            .abs()
+            .minimize(weight=15)
+        )
+    )
 
+    # 通过计算房间内物品（如家具）与其他物品（如装饰物或容器）之间的体积比率来优化物品的排列，从而确保物品在物品中的填充度符合预期。
+    score_terms["obj_in_obj_fullness"] = rooms.mean(
+        lambda r: (
+            furniture.related_to(r).mean(
+                lambda f: (
+                    obj.related_to(f, cu.on)
+                    .volume()
+                    .safediv(f.volume())
+                    .sub(params["obj_interior_obj_pct"])
+                    .abs()
+                    .minimize(weight=10)  # 计算填充度误差并最小化
+                )
+            )
+        )
+    )
+
+    def top_fullness_pct(f):
+        return (
+            obj.related_to(f, cu.ontop)
+            .volume(dims=(0, 1))
+            .safediv(f.volume(dims=(0, 1)))
+        )
+
+    score_terms["obj_ontop_storage_fullness"] = rooms.mean(
+        lambda r: (
+            storage.related_to(r).mean(
+                lambda f: (
+                    top_fullness_pct(f)
+                    .sub(params["obj_on_storage_pct"])
+                    .abs()
+                    .minimize(weight=10)
+                )
+            )
+        )
+    )
+
+    score_terms["obj_ontop_nonstorage_fullness"] = rooms.mean(
+        lambda r: (
+            furniture[-Semantics.Storage]
+            .related_to(r)
+            .mean(
+                lambda f: (
+                    top_fullness_pct(f)
+                    .sub(params["obj_on_nonstorage_pct"])
+                    .abs()
+                    .minimize(weight=10)
+                )
+            )
+        )
+    )
+    # endregion
+
+    newroom = rooms[Semantics.NewRoom].excludes(cu.room_types)
     # region classroom
 
     # teacher_desk_obj = wallfurn[shelves.SimpleDeskFactory]
@@ -238,7 +300,47 @@ def home_constraints():
     # )
     # endregion
 
+    # region living room
+    Sofa_obj = furniture[seating.SofaFactory]
+       
+    # FloorLamp_obj = furn   iture[lamp.FloorLampFactory].related_to(ArmChair_obj,cu.side_by_side)
     
+    constraints["living_room"] = newroom.all(
+        lambda r: (
+            Sofa_obj.related_to(r).count().in_range(1, 1)
+            # * CoffeeTable_obj.related_to(r).count().in_range(1, 1)
+            # * CoffeeTable_obj.related_to(Sofa_obj.related_to(r), cu.front_against).count().in_range(1, 1)
+            # * TVStand_obj.related_to(r).count().in_range(1, 1)
+            # * LargeShelf_obj.related_to(r).count().in_range(1, 1)
+            # * LargeShelf_obj.related_to(r).all(
+            #     lambda s: (
+            #         plant_obj.related_to(s, cu.on).count().in_range(1, 1)
+            #         * (plant_obj.related_to(s, cu.on).count() >= 0)
+            #         * vase_obj.related_to(s, cu.on).count().in_range(1, 1)
+            #         * (vase_obj.related_to(s, cu.on).count() >= 0)
+            #         * books_obj.related_to(s, cu.on).count().in_range(3, 3)
+            #         * (books_obj.related_to(s, cu.on).count() >= 0)
+            #     )
+            # )
+            # * ArmChair_obj.related_to(r).count().in_range(2, 2)
+            # * SideTable_obj.related_to(r).count().in_range(2, 2)
+            # * SideTable_obj.related_to(Sofa_obj.related_to(r), cu.side_by_side).count().in_range(2, 2)
+            # * FloorLamp_obj.related_to(r).count().in_range(2, 2)
+            # * SideTable_obj.related_to(r).all(
+            #     lambda s: (
+            #         plant_obj.related_to(s, cu.ontop).count().in_range(1, 1)
+            #         * (plant_obj.related_to(s, cu.ontop).count() >= 0)
+            #     )
+            # )
+            # * CoffeeTable_obj.related_to(r).all(
+            #     lambda s: (
+            #         vase_obj.related_to(s, cu.ontop).count().in_range(1, 1)
+            #         * (vase_obj.related_to(s, cu.ontop).count() >= 0)
+            #     )
+            # )
+        )
+    )
+    # endregion
     # region bookstore
     # rooms = cl.scene()[{Semantics.Room, -Semantics.Object}]
     # obj = cl.scene()[{Semantics.Object, -Semantics.Room}]

@@ -16,6 +16,9 @@ from infinigen.core.constraints.example_solver.state_def import State
 from . import moves
 from .reassignment import pose_backup, restore_pose_backup
 
+import bpy
+from infinigen_examples.util.visible import invisible_others, visible_others
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,20 +46,74 @@ class TranslateMove(moves.Move):
             state, target_name, expand_collision=expand_collision
         ):
             return False
-        if (
-            "LargeShelfFactory(1502912).bbox_placeholder(2697479)"
-            in state.objs[target_name].obj.name
-        ):
-            import pdb
+        # if (
+        #     "LargeShelfFactory(1502912).bbox_placeholder(2697479)"
+        #     in state.objs[target_name].obj.name
+        # ):
+        #     import pdb
 
-            pdb.set_trace()
+        #     pdb.set_trace()
         return True
 
     def revert(self, state: State):
         (target_name,) = self.names
         restore_pose_backup(state, target_name, self._backup_pose)
 
+    def apply_gradient(self, state: State, expand_collision=False):
+        (target_name,) = self.names
 
+        os = state.objs[target_name]
+        
+        
+
+        if target_name=="6870354_ArmChairFactory":
+            a = 1
+        result = validity.check_post_move_validity(state, target_name, expand_collision=expand_collision, return_touch=True, use_initial=True)
+        success, touch = result
+        if touch is None:
+            # no collision
+            return False
+        if isinstance(touch.names[1], str):
+            # no collision
+            return False
+        self.translation = self.calc_gradient(state.trimesh_scene,state,target_name,touch)
+        iu.translate(state.trimesh_scene, os.obj.name, self.translation)
+
+        self._backup_pose = pose_backup(os, dof=False)
+
+        
+        invisible_others()
+        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        visible_others()
+        return True
+    
+    def calc_gradient(self, scene, state, name, touch):
+
+        obj_state = state.objs[name]
+
+        a = obj_state.obj.name
+        T, g = scene.graph[a]  # 获取 b 的变换和几何信息
+        geom_a = scene.geometry[g]
+        centroid_a = geom_a.centroid
+
+        centroid_b_lst = []
+        b_names = []
+        for _,b in touch.names:
+            T, g = scene.graph[b]  # 获取 b 的变换和几何信息
+            geom_b = scene.geometry[g]
+            centroid_b = geom_b.centroid
+            if b not in b_names:
+                b_names.append(b)
+                centroid_b_lst.append(centroid_b)
+        centroid_b_mean = np.mean(centroid_b_lst, axis=0)
+
+        gradient = centroid_a - centroid_b_mean
+        gradient_norm = np.linalg.norm(gradient)
+        gradient = gradient/gradient_norm
+        TRANS_MULT = 0.1
+        translation = TRANS_MULT * obj_state.dof_matrix_translation @ gradient
+
+        return translation
 @dataclass
 class RotateMove(moves.Move):
     axis: np.array
