@@ -132,6 +132,10 @@ def execute_tasks(
     populate_scene_func: typing.Callable,
     input_folder: Path,
     output_folder: Path,
+    iter: int,
+    action: str,
+    json_name: str,
+    description: str,
     task: str,
     scene_seed: int,
     frame_range: tuple[int],
@@ -191,7 +195,7 @@ def execute_tasks(
     if Task.Coarse in task:
         butil.clear_scene(targets=[bpy.data.objects])
         butil.spawn_empty(f"{infinigen.__version__=}")
-        info = compose_scene_func(output_folder, scene_seed)
+        info = compose_scene_func(output_folder, scene_seed, iter, action, json_name, description)
         outpath = output_folder / "assets"
         outpath.mkdir(exist_ok=True)
         with open(outpath / "info.pickle", "wb") as f:
@@ -290,7 +294,16 @@ def execute_tasks(
         )
 
 
-def main(input_folder, output_folder, scene_seed, task, task_uniqname, **kwargs):
+def main(iter,
+        action,
+        description,
+        json_name,
+        input_folder, 
+        output_folder, 
+        scene_seed, 
+        task, 
+        task_uniqname, 
+        **kwargs):
     version_req = ["3.6.0"]
     assert bpy.app.version_string in version_req, (
         f"You are using blender={bpy.app.version_string} which is "
@@ -311,6 +324,10 @@ def main(input_folder, output_folder, scene_seed, task, task_uniqname, **kwargs)
         execute_tasks(
             input_folder=input_folder,
             output_folder=output_folder,
+            iter=iter,
+            action=action,
+            json_name=json_name,
+            description=description,
             task=task,
             scene_seed=scene_seed,
             **kwargs,

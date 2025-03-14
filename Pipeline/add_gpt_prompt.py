@@ -1,7 +1,7 @@
 ### 1. get big object, count, and relation
 step_1_big_object_prompt_system = """
 You are an experienced layout designer to design a 3D scene. 
-Your goal is to follow the user demand to add objects in the scene.
+Your goal is to follow the user demand and ideas to add objects in the scene.
 
 You will receive:
 1. The user demand you need to follow.
@@ -58,9 +58,13 @@ Here is the example:
 }
 
 """
+
+
+
 step_1_big_object_prompt_user = """
 Here is the information you receive:
-1.User demand: {demand}
+1.User demand for the entire scene: {demand}
+2.Ideas for this step: {ideas} 
 2.Room size: {roomsize}
 3.Layout: 
 {scene_layout}

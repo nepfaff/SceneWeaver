@@ -15,7 +15,6 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
     level=logging.INFO,
 )
-import sys
 import os
 import bpy
 import gin
@@ -61,7 +60,16 @@ from infinigen_examples.util.generate_indoors_util import (
 )
 from infinigen_examples.util.visible import invisible_others, visible_others
 import pickle
-from infinigen_examples.steps import (
+
+# from . import generate_nature  # noqa F401 # needed for nature gin configs to load
+
+logger = logging.getLogger(__name__)
+
+all_vars = [cu.variable_room, cu.variable_obj]
+
+@gin.configurable
+def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
+    from .steps import (
         basic_scene,
         room_structure, 
         init_graph, 
@@ -74,74 +82,39 @@ from infinigen_examples.steps import (
         complete_structure
     )
     
-logger = logging.getLogger(__name__)
+    p,stages,consgraph,limits,terrain = basic_scene.basic_scene(scene_seed,output_folder,overrides,logger)
+    
+    os.environ["GPT_RESULTS"] = "/home/yandan/workspace/infinigen/GPT/results_classroom_gpt_turbo.json"
+    state,solver,override = room_structure.build_room_structure(p,overrides,stages,logger,output_folder,scene_seed,consgraph)
+    
+    state,solver = init_graph.init_physcene(stages,limits,solver,state,p)
+    # state,solver = init_graph.init_gpt(stages,limits,solver,state,p)
+    # state,solver = init_graph.init_metascene(stages,limits,solver,state,p)
+    
+    state,solver = solve_objects.solve_large_object(stages,limits,solver,state,p,consgraph,overrides)
+    camera_rigs,solved_rooms,house_bbox,solved_bbox = camera.animate_camera(state,stages,limits,solver,p)
+    
+    # populate_placeholder.populate_intermediate_pholders(p,solver)
+    light.turn_off(p)
 
-all_vars = [cu.variable_room, cu.variable_obj]
+    state,solver = update_graph.add_gpt(stages,limits,solver,p)
+    record.record_scene(state,solver,solved_bbox,camera_rigs,p)
 
-@gin.configurable
-def compose_indoors(output_folder: Path, scene_seed: int, iter, action, json_name, description, **overrides):
-    height = 1
+    state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
+    state,solver = update_graph.modify(stages,limits,solver,p)
+    state,solver = update_graph.update(stages,limits,solver,p)
+    
+    state,solver = solve_objects.solve_large_and_medium_object(stages,limits,solver,state,p,consgraph,overrides)
 
-    consgraph = home_constraints()
-    stages = basic_scene.default_greedy_stages()
-    checks.check_all(consgraph, stages, all_vars)
+    populate_placeholder.populate_intermediate_pholders(p,solver)
 
-    stages, consgraph, limits = restrict_solving(stages, consgraph)
-    p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
+    record.export_supporter(state)
 
-    os.environ["JSON_RESULTS"] = json_name
-    if iter==0:
-        p,terrain = basic_scene.basic_scene(scene_seed,output_folder,overrides,logger,p)
-        os.environ["ROOM_INFO"] = "/home/yandan/workspace/infinigen/roominfo.json"
-        state,solver,override = room_structure.build_room_structure(p,overrides,stages,logger,output_folder,scene_seed,consgraph)
-        
-        light.turn_off(p)
+    state,solver = update_graph.add_acdc(solver,p)
+    state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
+    populate_placeholder.populate_intermediate_pholders(p,state)
 
-        camera_rigs,solved_rooms,house_bbox,solved_bbox = camera.animate_camera(state,stages,limits,solver,p)
-
-        match action:
-            case "init_physcene":
-                state,solver = init_graph.init_physcene(stages,limits,solver,state,p)
-            case "init_metascene":
-                state,solver = init_graph.init_metascene(stages,limits,solver,state,p)
-            case "init_gpt":
-                solver.load_gpt_results()
-                state,solver = init_graph.init_gpt(stages,limits,solver,state,p) 
-            case _ :
-                raise ValueError(f"Action is wrong: {action}") 
-    else:
-        state,solver,terrain,house_bbox,solved_bbox = record.load_scene(iter-1)
-        camera_rigs = [bpy.data.objects.get('CameraRigs/0')]
-        match action:
-            case "solve_large":
-                state,solver = solve_objects.solve_large_object(stages,limits,solver,state,p,consgraph,overrides)
-            case "solve_medium":
-                state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
-            case "solve_large_and_medium":
-                state,solver = solve_objects.solve_large_and_medium_object(stages,limits,solver,state,p,consgraph,overrides)
-            case "solve_small":
-                state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
-            case "add_gpt":
-                state,solver = update_graph.add_gpt(stages,limits,solver,state,p)
-            case "add_acdc":
-                state,solver = update_graph.add_acdc(solver,state,p,description)
-            case "export_supporter":
-                record.export_supporter(state, obj_name=description, export_path = "obj.blend")
-                sys.exit()
-            case "update":
-                state,solver = update_graph.update(solver,state,p)
-            case "modify":
-                state,solver = update_graph.modify(stages,limits,solver,p)
-            case "finalize_scene":
-                solved_rooms = [bpy.data.objects.get(bpy.data.objects['newroom_0-0'])]
-                height = complete_structure.finalize_scene(overrides,stages,state,solver,output_folder,p,terrain,solved_rooms,house_bbox,camera_rigs)
-            case _:
-                raise ValueError(f"Action is wrong: {action}") 
-        
-
-    record.record_scene(state,solver,terrain,house_bbox,solved_bbox,camera_rigs,iter,p)
-
-    # populate_placeholder.populate_intermediate_pholders(p,state)
+    height = complete_structure.finalize_scene(overrides,stages,state,solver,output_folder,p,terrain,solved_rooms,house_bbox,camera_rigs)
 
     return {
         "height_offset": height,
@@ -163,10 +136,6 @@ def main(args):
 
     execute_tasks.main(
         compose_scene_func=compose_indoors,
-        iter=args.iter,
-        action=args.action,
-        json_name=args.json_name,
-        description=args.description,
         populate_scene_func=None,
         input_folder=args.input_folder,
         output_folder=args.output_folder,
@@ -177,11 +146,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()                                                     
-    parser.add_argument("--iter", type=int, default=0)
-    parser.add_argument("--action", type=str, default="init_physcene")
-    parser.add_argument("--json_name", type=str, default="")
-    parser.add_argument("--description", type=str, default="")
+    parser = argparse.ArgumentParser()
     parser.add_argument("--output_folder", type=Path)
     parser.add_argument("--input_folder", type=Path, default=None)
     parser.add_argument(
@@ -232,13 +197,6 @@ if __name__ == "__main__":
             if len(args.debug) == 0 or any(name.endswith(x) for x in args.debug):
                 logging.getLogger(name).setLevel(logging.DEBUG)
 
-    import json
-    with open("args.json","r") as f:
-        j = json.load(f)
-        args.iter = j["iter"]
-        args.action = j["action"]
-        args.description = j["description"]
-        args.json_name = j["json_name"]
-
-
+    # import match
+    # match.debug()
     main(args)

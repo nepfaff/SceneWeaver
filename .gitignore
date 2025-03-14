@@ -5,6 +5,8 @@ blender.tar.xz
 Blender.app
 
 *.c
+*.json
+*.pkl
 
 .coverage
 coverage.xml

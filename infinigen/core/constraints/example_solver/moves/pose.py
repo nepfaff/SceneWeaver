@@ -93,9 +93,9 @@ class TranslateMove(moves.Move):
         success, touch = result
 
         self._backup_pose = pose_backup(os, dof=False)
-        invisible_others()
-        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        visible_others()
+        # invisible_others()
+        # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        # visible_others()
         if touch is None:
             # relation invalid, have moved to make it valid
             return False

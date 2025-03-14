@@ -3,13 +3,13 @@ import re
 from functools import reduce
 
 import prompts as prompts
-from gpt import GPT4 as gpt
+from gpt import GPT4 
 import os
 
 
 
 
-gpt = gpt()
+gpt = GPT4()
 
 results = dict()
 

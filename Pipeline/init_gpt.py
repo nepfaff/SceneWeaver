@@ -2,130 +2,20 @@ import json
 import re
 from functools import reduce
 
-import prompts as prompts
-from gpt import GPT4 as gpt
+import init_gpt_prompt as prompts
+from gpt import GPT4
+from utils import extract_json, dict2str, lst2str
+import sys
 
 
-def extract_json(input_string):
-    # Step 1: Extract the JSON string
-    start_idx = None
-    brace_count = 0
-    json_string = ""
-    for i, char in enumerate(input_string):
-        if char == "{":
-            if start_idx is None:
-                start_idx = i  # Mark the start of the JSON
-            brace_count += 1
-        elif char == "}":
-            brace_count -= 1
+def generate_scene_iter0(user_demand,ideas,roomtype):
 
-        if start_idx is not None:
-            json_string += char
+    gpt = GPT4()
 
-        if brace_count == 0 and start_idx is not None:
-            # Found the complete JSON structure
-            break
-    if not json_string:
-        raise ValueError("No valid JSON found in the input string.")
-
-    # Step 2: Convert the JSON string to a dictionary
-    try:
-        json_dict = json.loads(json_string)
-        return json_dict
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Error decoding JSON: {e}")
-
-
-def extract_data(input_string):
-    json_match = re.search(r"{.*?}", input_string, re.DOTALL)
-    if json_match:
-        extracted_json = json_match.group(0)
-        try:
-            # Convert the extracted JSON string into a Python dictionary
-            json_dict = json.loads(extracted_json)
-            return json_dict
-        except json.JSONDecodeError:
-            print(input_string)
-            print("Error while decoding the JSON.")
-            return None
-
-    # If no JSON object, try to extract a Python-style list
-    list_match = re.findall(r"\[.*?\]", input_string, re.DOTALL)
-    if list_match:
-        try:
-            # extracted_list = list_match #list_match.group(0)
-            extracted_list = [
-                re.split(r",\s*", match.strip("[]")) for match in list_match
-            ]
-            # Safely evaluate the extracted list string
-            # list_data = re.split(r'[,\[\]]', extracted_list)
-            # list_data = [data for data in list_data if len(data)>0]
-            return extracted_list
-        except (ValueError, SyntaxError):
-            print(input_string)
-            print("Error while decoding the list.")
-            return None
-
-    print("No valid JSON or list found.")
-    return None
-
-
-def lst2str(lst):
-    if isinstance(lst[0], list):
-        s = ["[" + ", ".join(list(map(str, i))) + "]" for i in lst]
-        s = "\n".join(s)
-        return s
-    else:
-        lst = list(map(str, lst))
-        return "[" + ", ".join(lst) + "]"
-
-
-def dict2str(d, indent=0):
-    """
-    Convert a dictionary into a formatted string.
-
-    Parameters:
-    - d: dict, the dictionary to convert.
-    - indent: int, the current indentation level (used for nested structures).
-
-    Returns:
-    - str: The string representation of the dictionary.
-    """
-    if not isinstance(d, dict):
-        raise ValueError("Input must be a dictionary")
-
-    result = []
-    indent_str = " " * (indent * 4)  # Indentation for nested levels
-
-    for key, value in d.items():
-        if isinstance(value, dict):
-            # Recursively handle nested dictionaries
-            result.append(
-                f"{indent_str}{key}: {{\n{dict2str(value, indent + 1)}\n{indent_str}}}"
-            )
-        elif isinstance(value, list):
-            # Handle lists
-            list_str = ", ".join(
-                dict2str(item, indent + 1) if isinstance(item, dict) else str(item)
-                for item in value
-            )
-            result.append(f"{indent_str}{key}: [{list_str}]")
-        else:
-            # Handle other types
-            result.append(f"{indent_str}{key}: {repr(value)}")
-
-    return "{" + ",\n".join(result) + "}"
-
-
-
-if __name__ == "__main__":
-    gpt = gpt()
-
-    roomtype = "Classroom"
     results = dict()
 
     ### 1. get big object, count, and relation
-    user_prompt = prompts.step_1_big_object_prompt_user.format(roomtype=roomtype)
+    user_prompt = prompts.step_1_big_object_prompt_user.format(demand=user_demand,ideas=ideas,roomtype=roomtype)
     prompt_payload = gpt.get_payload(prompts.step_1_big_object_prompt_system, user_prompt)
     gpt_text_response = gpt(payload=prompt_payload, verbose=True)
     print(gpt_text_response)
@@ -134,7 +24,7 @@ if __name__ == "__main__":
 
     # response = [i for i in gpt_text_response.split("\n") if len(i)>0]
     gpt_dict_response = extract_json(gpt_text_response)
-    roomsize = gpt_dict_response["Roomsize"]
+    roomsize = gpt_dict_response["Room size"]
     big_category_dict = gpt_dict_response["Category list of big object"]
     big_category_list = list(big_category_dict.keys())
     category_against_wall = gpt_dict_response["Object against the wall"]
@@ -156,7 +46,7 @@ if __name__ == "__main__":
         big_category_dict=big_category_dict_str,
         category_against_wall=category_against_wall_str,
         relation_big_object=relation_big_object_str,
-        roomtype=roomtype,
+        demand=user_demand,
         roomsize=roomsize_str,
     )
     prompt_payload = gpt.get_payload(prompts.step_5_position_prompt_system, user_prompt)
@@ -177,30 +67,33 @@ if __name__ == "__main__":
             success = False
     Placement_big = gpt_dict_response["Placement"]
 
+    small_category_list = []
+    relation_small_object = []
+    Placement_small = []
+    
+    # #### 2. get small object and relation
+    # s = lst2str(big_category_list)
+    # # s = "[bookshelves, reading tables, chairs, checkout counter]"
+    # user_prompt = prompts.step_2_small_object_prompt_user.format(
+    #     big_category_list=s, demand=user_demand
+    # )
+    # prompt_payload = gpt.get_payload(prompts.step_2_small_object_prompt_system, user_prompt)
+    # gpt_text_response = gpt(payload=prompt_payload, verbose=True)
+    # print(gpt_text_response)
+    # # gpt_text_response = '{\n    "Roomtype": "Living Room",\n    "List of big furniture": ["sofa", "armchair", "coffee table", "TV stand", "large shelf", "side table", "floor lamp"],\n    "List of small furniture": ["remote control", "book", "magazine", "decorative bowl", "photo frame", "vase", "candle", "coaster", "plant"],\n    "Relation": [\n        ["remote control", "coffee table", "ontop", 2],\n        ["book", "large shelf", "on", 5],\n        ["magazine", "coffee table", "ontop", 3],\n        ["decorative bowl", "coffee table", "ontop", 1],\n        ["photo frame", "side table", "ontop", 2],\n        ["vase", "side table", "ontop", 1],\n        ["candle", "large shelf", "on", 3],\n        ["coaster", "coffee table", "ontop", 4],\n        ["plant", "side table", "ontop", 1]\n    ]\n}'
 
-    #### 2. get small object and relation
-    s = lst2str(big_category_list)
-    # s = "[bookshelves, reading tables, chairs, checkout counter]"
-    user_prompt = prompts.step_2_small_object_prompt_user.format(
-        big_category_list=s, roomtype=roomtype
-    )
-    prompt_payload = gpt.get_payload(prompts.step_2_small_object_prompt_system, user_prompt)
-    gpt_text_response = gpt(payload=prompt_payload, verbose=True)
-    print(gpt_text_response)
-    # gpt_text_response = '{\n    "Roomtype": "Living Room",\n    "List of big furniture": ["sofa", "armchair", "coffee table", "TV stand", "large shelf", "side table", "floor lamp"],\n    "List of small furniture": ["remote control", "book", "magazine", "decorative bowl", "photo frame", "vase", "candle", "coaster", "plant"],\n    "Relation": [\n        ["remote control", "coffee table", "ontop", 2],\n        ["book", "large shelf", "on", 5],\n        ["magazine", "coffee table", "ontop", 3],\n        ["decorative bowl", "coffee table", "ontop", 1],\n        ["photo frame", "side table", "ontop", 2],\n        ["vase", "side table", "ontop", 1],\n        ["candle", "large shelf", "on", 3],\n        ["coaster", "coffee table", "ontop", 4],\n        ["plant", "side table", "ontop", 1]\n    ]\n}'
+    # gpt_dict_response = extract_json(gpt_text_response)
+    # small_category_list = gpt_dict_response["List of small furniture"]
+    # relation_small_object = gpt_dict_response["Relation"]
 
-    gpt_dict_response = extract_json(gpt_text_response)
-    small_category_list = gpt_dict_response["List of small furniture"]
-    relation_small_object = gpt_dict_response["Relation"]
-
-    # List of small furniture: ["books", "lamps", "magazines", "decorative items", "cash register"]
-    # Relation: [
-    #     ["books", "bookshelves", "on", 50],
-    #     ["lamps", "reading tables", "ontop", 4],
-    #     ["magazines", "reading tables", "ontop", 6],
-    #     ["decorative items", "checkout counter", "ontop", 3],
-    #     ["cash register", "checkout counter", "ontop", 1]
-    # ]
+    # # List of small furniture: ["books", "lamps", "magazines", "decorative items", "cash register"]
+    # # Relation: [
+    # #     ["books", "bookshelves", "on", 50],
+    # #     ["lamps", "reading tables", "ontop", 4],
+    # #     ["magazines", "reading tables", "ontop", 6],
+    # #     ["decorative items", "checkout counter", "ontop", 3],
+    # #     ["cash register", "checkout counter", "ontop", 1]
+    # # ]
 
 
     ################## load results
@@ -233,7 +126,7 @@ if __name__ == "__main__":
     # placement_big = dict2str(Placement_big)
     # user_prompt = prompts.step_6_small_position_prompt_user.format(
     #     big_category_dict=big_category_dict_str,
-    #     roomtype=roomtype,
+    #     demand=user_demand,
     #     roomsize=roomsize_str,
     #     small_category_lst=small_category_list_str,
     #     relation_small_big=relation_small_object_str,
@@ -261,10 +154,11 @@ if __name__ == "__main__":
     # #### 3. get object class name in infinigen
     category_list = big_category_list + small_category_list
     s = lst2str(category_list)
+
     user_prompt = prompts.step_3_class_name_prompt_user.format(
-        category_list=s, roomtype=roomtype
+        category_list=s, demand=user_demand
     )
-    system_prompt = prompts.step_3_class_name_prompt_system.replace("ROOMTYPE",roomtype)
+    system_prompt = prompts.step_3_class_name_prompt_system
 
     prompt_payload = gpt.get_payload(system_prompt, user_prompt)
     gpt_text_response = gpt(payload=prompt_payload, verbose=True)
@@ -294,7 +188,7 @@ if __name__ == "__main__":
     #     relation_big_object,
     #     relation_small_object,
     #     big_category_dict,
-    #     roomtype,
+    #     user_demand,
     #     name_mapping,
     # ):
     #     var_dict = dict()
@@ -361,7 +255,7 @@ if __name__ == "__main__":
     #         relation_big_object=relation_big_object_str,
     #         relation_small_object=relation_small_object_str,
     #         vars_definition=vars_definition,
-    #         roomtype=roomtype,
+    #         demand=user_demand,
     #     )
     #     print(user_prompt)
     #     return user_prompt
@@ -373,7 +267,7 @@ if __name__ == "__main__":
     #     relation_big_object,
     #     relation_small_object,
     #     big_category_dict,
-    #     roomtype,
+    #     user_demand,
     #     name_mapping,
     # )
     # prompt_payload = gpt.get_payload(prompts.step_4_rule_prompt_system, user_prompt)
@@ -382,7 +276,7 @@ if __name__ == "__main__":
     # print(gpt_text_response)
 
 
-    results["roomtype"] = roomtype
+    results["user_demand"] = user_demand
     results["roomsize"] = roomsize
     results["big_category_dict"] = big_category_dict
     results["category_against_wall"] = category_against_wall
@@ -390,9 +284,15 @@ if __name__ == "__main__":
     results["small_category_list"] = small_category_list
     results["relation_small_object"] = relation_small_object
     results["name_mapping"] = name_mapping
-    # results["gpt_text_response"] = gpt_text_response
+    results["gpt_text_response"] = gpt_text_response
     results["Placement_big"] = Placement_big
-    # results["Placement_small"] = Placement_small
+    results["Placement_small"] = Placement_small
 
-    with open("results_classroom_gpt_turbo.json", "w") as f:
+    json_name = "/home/yandan/workspace/infinigen/Pipeline/record/init_gpt_results.json"
+    with open(json_name, "w") as f:
         json.dump(results, f, indent=4)
+
+    return json_name
+
+if __name__ == "__main__":
+    user_demand = "Bedroom"

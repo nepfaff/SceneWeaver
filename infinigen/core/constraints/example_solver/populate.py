@@ -232,7 +232,7 @@ def populate_state_placeholders_mid(state: State, filter=None, final=True, updat
                 f"{populate_state_placeholders.__name__} cut {cutter.name=} from {cut_objs=}"
             )
             update_state_mesh_objs += cut_objs  # 更新网格对象列表
-        state.objs[objkey].populate_obj = obj
+        state.objs[objkey].populate_obj = obj.name
         
     unique_assets.hide_viewport = False  # 恢复显示资产集合的视图
     # 如果是最终的处理，则返回

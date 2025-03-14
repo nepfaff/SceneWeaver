@@ -1,13 +1,11 @@
 
 import bpy
 import math
-from mathutils import Vector, Euler
+from mathutils import Vector
 import os
 import sys
 
 sys.path.append("/home/yandan/workspace/digital-cousins/digital_cousins/models/blend/")
-from load_objaverse import load_pickled_3d_asset
-from configs import RENDER_DIR
 from scipy.spatial.transform import Rotation
 
 def add_light():
@@ -350,25 +348,33 @@ def load_glb(mesh_path):
 
 if __name__ == "__main__":
     basedir = "/mnt/fillipo/huangyue/recon_sim/7_anno_v4/export_stage2_sm"
-    
-    scene_name = "scene0001_00"
-    scene_path = f"{basedir}/{scene_name}"
+    for scene_name in os.listdir(basedir):
+        # scene_name = "scene0470_00"
+        scene_path = f"{basedir}/{scene_name}"
+        
+        outdir = f"/mnt/fillipo/yandan/metascene/export_stage2_sm/{scene_name}"
+        if not os.path.exists(outdir):
+            os.mkdir(outdir)
+        else:
+            continue
 
-    bpy.ops.object.select_all(action='SELECT')
-    # Delete all selected objects
-    bpy.ops.object.delete()
+        bpy.ops.object.select_all(action='SELECT')
+        # Delete all selected objects
+        bpy.ops.object.delete()
 
-    bpy.context.scene.render.resolution_x = 512  # Width in pixels
-    bpy.context.scene.render.resolution_y = 512
+        bpy.context.scene.render.resolution_x = 512  # Width in pixels
+        bpy.context.scene.render.resolution_y = 512
 
-    for i in os.listdir(scene_path):
-        if i.endswith(".glb"):
-            obj_name = i.split(".")[0]
-            mesh_path = f"{scene_path}/{obj_name}.glb"
-            imported_obj = load_glb(mesh_path)
-            
-            save_dir = f"/mnt/fillipo/yandan/metascene/export_stage2_sm/{scene_name}/{obj_name}"
-            if not os.path.exists(save_dir):
-                os.mkdir(save_dir)
-            render_90degree(imported_obj, save_dir)
+        for i in os.listdir(scene_path):
+            if i.startswith("planes") or i.startswith("geometry"):
+                continue
+            if i.endswith(".glb"):
+                obj_name = i.split(".")[0]
+                mesh_path = f"{scene_path}/{obj_name}.glb"
+                imported_obj = load_glb(mesh_path)
+                
+                save_dir = f"{outdir}/{obj_name}"
+                if not os.path.exists(save_dir):
+                    os.mkdir(save_dir)
+                render_90degree(imported_obj, save_dir)
 

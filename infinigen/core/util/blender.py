@@ -63,10 +63,23 @@ class ViewportMode:
         self.mode = mode
 
     def __enter__(self):
-        self.orig_active = bpy.context.active_object
-        bpy.context.view_layer.objects.active = self.obj
-        self.orig_mode = bpy.context.object.mode
-        bpy.ops.object.mode_set(mode=self.mode)
+        try:
+            self.orig_active = bpy.context.active_object
+            bpy.context.view_layer.objects.active = self.obj
+            self.orig_mode = bpy.context.object.mode
+            bpy.ops.object.mode_set.poll() 
+            bpy.ops.object.mode_set(mode=self.mode)
+        except:
+            self.orig_active = bpy.context.view_layer.objects.active
+            self.orig_mode = self.orig_active.mode
+            self.obj.select_set(True) 
+
+            with bpy.context.temp_override(object=self.obj):
+                bpy.context.view_layer.objects.active = self.obj
+                self.obj.select_set(True) 
+                bpy.ops.object.mode_set(mode=self.mode)
+            # bpy.ops.object.mode_set(mode=self.mode) 
+        
 
     def __exit__(self, *args):
         bpy.context.view_layer.objects.active = self.obj

@@ -125,7 +125,7 @@ class Solver:
         self.moves = self._configure_move_weights(
             restrict_moves, addition_weight_scalar=addition_weight_scalar
         )
-        self.load_gpt_results()
+        
 
     def _configure_move_weights(self, restrict_moves, addition_weight_scalar=1.0):
         schedules = {
@@ -308,8 +308,8 @@ class Solver:
         return self.state
     
     def load_gpt_results(self):
-        PATH_TO_SCENES = os.getenv("GPT_RESULTS")
-        with open(PATH_TO_SCENES,"r") as f:
+        json_name = os.getenv("JSON_RESULTS")
+        with open(json_name,"r") as f:
             info = json.load(f)
         self.name_mapping = info["name_mapping"]
         if "Placement_big" in info:
@@ -330,9 +330,11 @@ class Solver:
         var_assignments: dict[str, str],
         stage = "large" #large, medium, small
     ):  
-
-        with open(f"/home/yandan/workspace/infinigen/GPT/method_4_GPT_iter{iter}_results.json","r") as f:
+        json_name = os.getenv("JSON_RESULTS")
+        with open(json_name,"r") as f:
             info = json.load(f)
+        # with open(f"/home/yandan/workspace/infinigen/GPT/method_4_GPT_iter{iter}_results.json","r") as f:
+        #     info = json.load(f)
         
         Placement = info["Placement"]
         self.category_against_wall = info["category_against_wall"]
@@ -594,10 +596,14 @@ class Solver:
         var_assignments: dict[str, str],
         stage = "large" #large, medium, small
     ):  
-        basedir = "/mnt/fillipo/huangyue/recon_sim/7_anno_v4/export_stage2_sm/scene0001_00/"
         
-        metadata = "/mnt/fillipo/yandan/metascene/export_stage2_sm/scene0001_00/metadata.json"
-       
+        scene_id = os.getenv("JSON_RESULTS")
+
+        basedir = f"/mnt/fillipo/huangyue/recon_sim/7_anno_v4/export_stage2_sm/{scene_id}/"
+        metadata = f"/mnt/fillipo/yandan/metascene/export_stage2_sm/{scene_id}/metadata.json"
+        # PATH_TO_SCENES = os.getenv("JSON_RESULTS")
+        # with open(PATH_TO_SCENES,"r") as f:
+        #     Placement = json.load(f)
         with open(metadata,"r") as f:
             Placement = json.load(f)
         for key,value in Placement.items():
@@ -824,10 +830,13 @@ class Solver:
                                     "scale":list(target_obj.scale),
                                     "size":target_obj.dimensions}
         
-
-        filename = f"/home/yandan/workspace/sd35/outputs/sd35_large/A_176_39_45cm_tv_stand_with_vase_and_remote_contro_2025-03-04T11-33-00/acdc_output/step_3_output/scene_2/scene_2_info.json"
-        with open(filename,"r") as f:
+        PATH_TO_SCENES = os.getenv("JSON_RESULTS")
+        with open(PATH_TO_SCENES,"r") as f:
             scene_info = json.load(f)
+        
+        # filename = f"/home/yandan/workspace/infinigen/Pipeline/record/acdc_output/step_3_output/scene_2/scene_2_info.json"
+        # with open(filename,"r") as f:
+        #     scene_info = json.load(f)
 
         supporter = scene_info["supporter"]
 
@@ -979,6 +988,9 @@ class Solver:
             module = importlib.import_module(module_name)
             # Access the attribute (which could be a class, function, etc.)
             parent_Factory = getattr(module, attribute_name)
+
+            # parent_Factory = self.state.objs[parent_obj_name].generator
+            
             parent_domain = r.Domain(usage_lookup.usages_of_factory(parent_Factory) )
             relation_module = getattr(cu, relation)
             stage = secondary.with_relation(relation_module, parent_domain)

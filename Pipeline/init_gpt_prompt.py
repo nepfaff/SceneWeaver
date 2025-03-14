@@ -21,21 +21,22 @@ The former object is smaller than the latter object, such as chair and table, ni
 
 The optional relation is : 
 1.front_against: obj1's front faces to obj2, and stand very close.
-2.front_to_front: obj1's front faces to obj2's front, and stand very close.
+2.front_to_front: obj1's  front faces to obj2's front, and stand very close.
 3.leftright_leftright: obj1's left or right faces to obj2's left or right, and stand very close. 
 4.side_by_side: obj1's side(left, right , or front) faces to obj2's side(left, right , or front), and stand very close. 
 5.back_to_back: obj1's back faces to obj2's back, and stand very close. 
+Note obj1 is usually smaller than obj2, or obj1 belongs to obj2.
 
 Failure case of relation:
 1.[table, table, side_by_side]: The relation between the same category is wrong. You only focus on relation between 2 different categories.
 2.[chair, table, side_by_side]: Chair must be in front of the table, using 'front_against' instead of 'side_by_side'.
 3.[wardrobe, bed, front_against]: Wardrobe has no subordinate relationship with bed. And they need to keep a long distance to make wardrobe accessable
-4.[chair, table, side_by_side],[chair, bed, front_against]: Each category, such as chair can only have one relationship. 2 relations will cause failure.
+4.[chair, table, side_by_side],[chair, bed, front_against]: Each category, such as chair, can only have one relationship. 2 relations will cause failure.
 
 Here is the example: 
 {
     "User demand": "Bedroom",
-    "Roomsize": [3, 4],
+    "Room size": [3, 4],
     "Category list of big object": {"bed":"1", "wardrobe":"1", "nightstand":"2", "bench":"1"},
     "Object against the wall": ["bed", "wardrobe", "nightstand"],
     "Relation between big objects": [["nightstand", "bed", "side_by_side"], ["bench", "bed", "front_to_front"]]
@@ -44,6 +45,8 @@ Here is the example:
 step_1_big_object_prompt_user = """
 Here is the user demand you need to follow:
 User demand: {demand}
+Designing ideas: {ideas}
+Roomtype: {roomtype}
 
 Here is your response:
 """

@@ -40,8 +40,8 @@ class RoomSolver:
     ):
         self.factory_seed = factory_seed
         # load room size
-        GPT_RESULTS = os.getenv("GPT_RESULTS")
-        with open(GPT_RESULTS, "r") as f:
+        ROOM_INFO = os.getenv("ROOM_INFO")
+        with open(ROOM_INFO, "r") as f:
             info = json.load(f)
         self.width, self.height = info["roomsize"]
         os.environ["room_width"] = str(self.width)
