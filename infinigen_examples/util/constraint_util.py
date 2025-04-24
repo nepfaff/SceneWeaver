@@ -50,7 +50,13 @@ down_dir = np.array([0, 0, -1])
 
 bottom = {t.Subpart.Bottom, -t.Subpart.Top, -t.Subpart.Front, -t.Subpart.Back}
 back = {t.Subpart.Back, -t.Subpart.Top, -t.Subpart.Front}
-top = {t.Subpart.Top, -t.Subpart.Back, -t.Subpart.Bottom, -t.Subpart.Front, -t.Subpart.SupportSurface}
+top = {
+    t.Subpart.Top,
+    -t.Subpart.Back,
+    -t.Subpart.Bottom,
+    -t.Subpart.Front,
+    -t.Subpart.SupportSurface,
+}
 # top = {t.Subpart.Top, -t.Subpart.Back, -t.Subpart.Bottom, -t.Subpart.Front}
 side = {-t.Subpart.Top, -t.Subpart.Bottom, -t.Subpart.Back, -t.Subpart.SupportSurface}
 
@@ -80,7 +86,7 @@ side_against_wall = cl.StableAgainst(side, walltags, margin=0.05)
 
 ontop = cl.StableAgainst(bottom, top)
 on = cl.StableAgainst(bottom, {t.Subpart.SupportSurface, -t.Subpart.Top})
-# on = cl.StableAgainst(bottom, {t.Subpart.SupportSurface}) 
+# on = cl.StableAgainst(bottom, {t.Subpart.SupportSurface})
 
 # front_against = cl.StableAgainst(
 #     front, side, margin=0.05, check_z=False
@@ -91,16 +97,18 @@ front_against = cl.StableAgainst(
 
 front_to_front = cl.StableAgainst(front, front, margin=0.05, check_z=False)
 
-leftright_leftright = cl.StableAgainst(leftright, leftright, margin=0.05, check_z=False)  # YYD 0.5
+leftright_leftright = cl.StableAgainst(
+    leftright, leftright, margin=0.05, check_z=False
+)  # YYD 0.5
 side_by_side = cl.StableAgainst(side, side, check_z=False)
 back_to_back = cl.StableAgainst(back, back)
 
 variable_room = t.Variable("room")
 variable_obj = t.Variable("obj")
 
-#New
+# New
 
 back_coplanar_back = cl.CoPlanar(back, back, margin=0.05, rev_normal=True)
 front_coplanar_front = cl.CoPlanar(front, front, margin=0.05, rev_normal=True)
 
-# face_to = 
+# face_to =

@@ -1,7 +1,9 @@
-from infinigen.core.util import blender as butil
 import bpy
 
-def invisible_others(hide_placeholder=False,hide_all=False):
+from infinigen.core.util import blender as butil
+
+
+def invisible_others(hide_placeholder=False, hide_all=False):
     if hide_all:
         for col in bpy.data.collections:
             if col.name == "Collection":
@@ -10,7 +12,7 @@ def invisible_others(hide_placeholder=False,hide_all=False):
             mesh.hide_viewport = True
             mesh.hide_render = True
         return
-    
+
     # rooms_split["exterior"].hide_viewport = True
     # rooms_split["exterior"].hide_render = True
     mesh = butil.get_collection("placeholders:room_shells")

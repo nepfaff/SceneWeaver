@@ -11,7 +11,7 @@ import bpy
 import gin
 import numpy as np
 import trimesh
-
+from tqdm import tqdm
 import infinigen.core.util.blender as butil
 from infinigen.core import tagging
 from infinigen.core import tags as t
@@ -292,11 +292,14 @@ class Planes:
 
         # find closest parent plane
         min_d = 1000
-        for idx, parent_plane in enumerate(parent_all_planes):
-            parent_plane_trimesh = state.planes.get_tagged_submesh(
+        # state.planes.get_tagged_submesh_prefast(state.trimesh_scene, parent_obj.name, parent_tags, parent_all_planes)
+        print("Getting the closest surface of ",parent_obj.name)
+        for idx, parent_plane in tqdm(enumerate(parent_all_planes)):
+            parent_plane_trimesh = state.planes.get_tagged_submesh_fast(
                 state.trimesh_scene, parent_obj.name, parent_tags, parent_plane
             )
-            print(parent_obj.name,idx,len(parent_all_planes))
+            
+            # print(parent_obj.name,idx,len(parent_all_planes))
             distance = trimesh.proximity.signed_distance(parent_plane_trimesh, center)
             if min_d > abs(distance):
                 min_d = abs(distance)
@@ -352,11 +355,83 @@ class Planes:
     ):
         obj = blender_objs_from_names(name)[0]
         face_mask = tagging.tagged_face_mask(obj, tags)
-        mask = self.tagged_plane_mask(obj, face_mask, plane)
+        mask = self.tagged_plane_mask(obj, face_mask, plane, fast=True)
+        tmesh = meshes_from_names(scene, name)[0]
+        geom = tmesh.submesh(np.where(mask), append=True)
+        return geom
+    
+    def get_tagged_submesh_fast(
+        self, scene: trimesh.Scene, name: str, tags: set, plane: int
+    ):
+        obj = blender_objs_from_names(name)[0]
+        face_mask = tagging.tagged_face_mask(obj, tags)
+        mask = self.tagged_plane_masks_fast(obj, face_mask, plane)
         tmesh = meshes_from_names(scene, name)[0]
         geom = tmesh.submesh(np.where(mask), append=True)
         return geom
 
+    def tagged_plane_masks_fast(
+        self,
+        obj: bpy.types.Object,
+        face_mask: np.ndarray,
+        plane: tuple[str, int],
+        hash_tolerance=1e-4,
+        plane_tolerance=1e-2,
+        fast=True,
+    ) -> np.ndarray:
+        import time
+
+        # t0 = time.time()
+        obj_id = obj.name
+        # t1 = time.time()
+        # print(f"Command 1 took {t1 - t0:.4f} seconds")
+        current_hash = self.calculate_mesh_hash(obj) 
+        # t2 = time.time()
+        # print(f"Command 2 took {t2 - t1:.4f} seconds")
+        face_mask_hash = self.hash_face_mask(face_mask)
+        # t3 = time.time()
+        # print(f"Command 3 took {t3 - t2:.4f} seconds")
+        ref_poly = self.planerep_to_poly(plane)
+        # t4 = time.time()
+        # print(f"Command 4 took {t4 - t3:.4f} seconds")
+        ref_vertex = global_vertex_coordinates(
+            obj, obj.data.vertices[ref_poly.vertices[0]]
+        )
+        # t5 = time.time()
+        # print(f"Command 5 took {t5 - t4:.4f} seconds")
+        ref_normal = global_polygon_normal(obj, ref_poly)
+        # t6 = time.time()
+        # print(f"Command 6 took {t6 - t5:.4f} seconds")
+        plane_hash = self.hash_plane(
+            ref_normal, ref_vertex, hash_tolerance
+        )  # Calculate hash for plane
+        # t7 = time.time()
+        # print(f"Command 7 took {t7 - t6:.4f} seconds")
+        cache_key = (obj_id, plane_hash, face_mask_hash)
+
+
+        mesh_or_face_mask_changed = (
+            cache_key not in self._cached_plane_masks
+            or self._mesh_hashes.get(obj_id) != current_hash
+        )
+        if not mesh_or_face_mask_changed:
+            # logger.info(f'Cache HIT plane mask for {obj.name=}')
+            return self._cached_plane_masks[cache_key]["mask"]
+        
+        # If mesh or face mask changed, update the hash and recompute
+        self._mesh_hashes[obj_id] = current_hash
+
+        name,idx = plane
+        plane_mask = np.zeros(face_mask.shape, dtype=bool)
+        plane_mask[idx] = True
+
+        # Update the cache with the new result
+        self._cached_plane_masks[cache_key] = {
+            "mask": plane_mask,
+        }
+
+        return plane_mask
+    
     def tagged_plane_mask(
         self,
         obj: bpy.types.Object,

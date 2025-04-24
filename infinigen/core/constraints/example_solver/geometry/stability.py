@@ -215,6 +215,7 @@ def  stable_against(
             TRANS_MULT = 0.1
             translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
             iu.translate(state.trimesh_scene, sa.obj.name, translation)
+            print(obj_name, bpy.data.objects[sa.obj.name].location)
  
     else:
         if obj_name=='6569851_FloorLampFactory':

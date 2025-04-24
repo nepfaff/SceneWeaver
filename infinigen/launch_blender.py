@@ -52,12 +52,17 @@ if __name__ == "__main__":
         j = json.load(f)
         args.iter = j["iter"]
         args.inplace = j["inplace"]
+    
+    with open("/home/yandan/workspace/infinigen/roominfo.json","r") as f:
+        j = json.load(f)
+        save_dir = j["save_dir"]
+        
 
     cmd_args = [str(get_standalone_blender_path())]
     if args.inplace:
-        cmd_args += [f"record_files/scene_{args.iter}.blend"]
+        cmd_args += [f"{save_dir}/record_files/scene_{args.iter}.blend"]
     else:
-        cmd_args += [f"record_files/scene_{args.iter-1}.blend"]
+        cmd_args += [f"{save_dir}/record_files/scene_{args.iter-1}.blend"]
     if args.module is not None:
         # cmd_args += HEADLESS_ARGS
 

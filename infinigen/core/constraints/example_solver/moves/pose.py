@@ -18,11 +18,11 @@ from infinigen.core.constraints.example_solver.geometry.dof import (
     combined_stability_matrix,
 )
 from infinigen.core.constraints.example_solver.state_def import State
+from infinigen.core.tags import Subpart
 from infinigen_examples.util.visible import invisible_others, visible_others
 
 from . import moves
 from .reassignment import pose_backup, restore_pose_backup
-from infinigen.core.tags import Subpart
 
 logger = logging.getLogger(__name__)
 
@@ -66,15 +66,19 @@ class TranslateMove(moves.Move):
 
     def apply_gradient(self, state: State, temperature=None, expand_collision=False):
         (target_name,) = self.names
+        if target_name=='7438460_a black keyboard':
+            a =1
 
         # state.trimesh_scene.show()
         os = state.objs[target_name]
 
         obj_state = state.objs[target_name]
+        if obj_state.obj.name=="ObjaverseCategoryFactory(9247144).bbox_placeholder(584137)":
+            a = 1
         # print(target_name,s "1 ",obj_state.obj.location)
 
         parent_planes = apply_relations_surfacesample(
-            state, target_name, use_initial=True,closest_surface=True
+            state, target_name, use_initial=True, closest_surface=False ##TODO YYD closest_surface
         )
         obj_state.dof_matrix_translation = combined_stability_matrix(
             parent_planes
@@ -97,9 +101,10 @@ class TranslateMove(moves.Move):
 
         self._backup_pose = pose_backup(os, dof=False)
 
-        # invisible_others()
-        # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        # visible_others()
+        if not bpy.app.background:
+            invisible_others()
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+            visible_others()
         # import pdb
         # pdb.set_trace()
         if touch is None:
@@ -111,7 +116,7 @@ class TranslateMove(moves.Move):
         # if isinstance(touch.names[1], str):
         #     # no collision
         #     return False
-        if len(touch.names)==0:
+        if len(touch.names) == 0:
             # no collision
             return False
         # if "ChairFactory" in target_name:
@@ -135,45 +140,51 @@ class TranslateMove(moves.Move):
         # visible_others()
         # pdb.set_trace()
         return success
-    
 
     def calc_gradient(self, scene, state, name, touch):
-
         obj_state = state.objs[name]
-       
+
         # record top children
         childnames = set()
-        for k,os in state.objs.items():
+        for k, os in state.objs.items():
             for rel in os.relations:
-                if rel.target_name==name and \
-                    (Subpart.SupportSurface in rel.relation.parent_tags or Subpart.Top in rel.relation.parent_tags):
+                if rel.target_name == name and (
+                    Subpart.SupportSurface in rel.relation.parent_tags
+                    or Subpart.Top in rel.relation.parent_tags
+                ):
                     childnames.add(os.obj.name)
 
         a = obj_state.obj.name
         b_names = []
         gradient = np.zeros(3)
-        valid_names = [x for x in touch.names if x!=a]
-        
+        valid_names = [x for x in touch.names if x != a]
+
         # for _, b in touch.names:
         for i in range(len(valid_names)):
             b = valid_names[i]
             normal = touch.contacts[i].normal
             depth = touch.contacts[i].depth
 
-            if b in childnames or b==state.objs[name].obj.name: # remove top children's collision
+            if (
+                b in childnames or b == state.objs[name].obj.name
+            ):  # remove top children's collision
                 continue
-      
+
             if b not in b_names:
                 b_names.append(b)
-                gradient += normal*depth
+                gradient += normal * depth
+                # print(depth,b,name)
 
         gradient[2] = 0
+        
         gradient_norm = np.linalg.norm(gradient)
-        if len(b_names) == 0 or gradient_norm==0:
+        if len(b_names) == 0 or gradient_norm == 0:
             gradient = np.zeros(3)
-        else:
-            gradient = gradient / gradient_norm
-        TRANS_MULT = 0.1
+        # else:
+            # TRANS_MULT = 0.05
+        #     gradient = gradient / gradient_norm
+        print(gradient)
+        TRANS_MULT = 1
         translation = TRANS_MULT * obj_state.dof_matrix_translation @ gradient
 
         return translation
@@ -183,7 +194,7 @@ class TranslateMove(moves.Move):
     #         import pdb
     #     #     pdb.set_trace()
     #     obj_state = state.objs[name]
-       
+
     #     # record top children
     #     childnames = set()
     #     for k,os in state.objs.items():
@@ -212,7 +223,7 @@ class TranslateMove(moves.Move):
 
     #     if centroid_b_lst==[]:
     #         return [0,0,0]
-        
+
     #     centroid_b_mean = np.mean(centroid_b_lst, axis=0)
     #     if "FloorLampFactory" in name:
     #         a = 1

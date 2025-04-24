@@ -120,6 +120,7 @@ def default_greedy_stages():
 
 all_vars = [cu.variable_room, cu.variable_obj]
 
+
 def export_layout(state,solver,save_dir):
     import json
     results = dict()
@@ -239,7 +240,8 @@ def world_to_image(image_path, output_path):
     print(f"Image with marked point saved at {output_path}")
 
 @gin.configurable
-def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
+# def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
+def compose_indoors(output_folder: Path, scene_seed: int, iter, action, json_name, description, inplace, **overrides):
     import os
 
     os.environ["GPT_RESULTS"] = "/home/yandan/workspace/infinigen/GPT/results_classroom_gpt_turbo.json"
@@ -859,6 +861,11 @@ def main(args):
 
     execute_tasks.main(
         compose_scene_func=compose_indoors,
+        iter=0,
+        action="",
+        json_name="",
+        description="",
+        inplace=False,
         populate_scene_func=None,
         input_folder=args.input_folder,
         output_folder=args.output_folder,

@@ -1,65 +1,41 @@
+import json
+
 import bpy
 import trimesh
-import json
-# from infinigen.core import tags as t
-from infinigen.core.constraints.evaluator.node_impl.trimesh_geometry import any_touching
+
 from infinigen.core.constraints.constraint_language import util as iu
 
-def eval_metric(
-    state,
-    iter
-):
-    Nobj, OOB, BBL = eval_physics_score(state)
-    # real, func, complet = eval_general_score(state)
-    # GPT_sim, CLIP_sim = eval_align_score(state)
+# from infinigen.core import tags as t
+from infinigen.core.constraints.evaluator.node_impl.trimesh_geometry import any_touching
+import os
 
-    results = {
-        "Nobj":Nobj, 
-        "OOB":OOB,
-        "BBL":BBL,
-        # "real":real,
-        # "func":func,
-        # "complet":complet,
-        # "GPT_sim":GPT_sim,
-        # "CLIP_sim":CLIP_sim,
-    }
-
-    with open(f"record_files/metric_{iter}.json", "w") as file:
-        json.dump(results, file,indent=4)
+def eval_metric(state, iter):
+    results = eval_physics_score(state)
+    save_dir = os.getenv("save_dir")
+    with open(f"{save_dir}/record_files/metric_{iter}.json", "w") as file:
+        json.dump(results, file, indent=4)
     return
-
-
-
-
-
-# def eval_align_score(state):
-#     GPT_sim = 0
-#     CLIP_sim = 0
-#     return GPT_sim, CLIP_sim
-
 
 
 def eval_physics_score(state):
     scene = state.trimesh_scene
     collision_objs = []
+    map_names = dict()
     for name, info in state.objs.items():
-        if name.startswith("window") or name == "newroom_0-0" or name == "entrance":
+        if name.startswith("window") or name == "newroom_0-0" or name == "entrance" or name.endswith("RugFactory"):
             continue
         else:
-            collision_objs.append(state.objs[name].populate_obj)  #mesh
-            # collision_objs.append(state.objs[name].obj.name)  #bbox
-    # collision_objs = [
-    #     os.obj.name
-    #     for k, os in state.objs.items()
-    #     if t.Semantics.NoCollision not in os.tags
-    # ]
-    Nobj = len(collision_objs)
-    print("Nobj: ",Nobj)
+            name_obj = state.objs[name].populate_obj
+            map_names[name_obj] = name
+            collision_objs.append(name_obj)  # mesh
     
+    Nobj = len(collision_objs)
+    print("Nobj: ", Nobj)
+
     OOB_objs = []
     room_obj = state.objs["newroom_0-0"].obj
-    normal_b = [0,0,1]
-    origin_b = [0,0,0]
+    normal_b = [0, 0, 1]
+    origin_b = [0, 0, 0]
     b_trimesh = iu.meshes_from_names(scene, room_obj.name)[0]
     projected_b = trimesh.path.polygons.projected(b_trimesh, normal_b, origin_b)
     for name in collision_objs:
@@ -69,42 +45,125 @@ def eval_physics_score(state):
         #     projected_a = trimesh.path.polygons.projected(a_trimesh, normal_b, origin_b)
         # except:
         #     projected_a = trimesh.path.polygons.projected(a_trimesh.convex_hull, normal_b, origin_b)
-        projected_a = trimesh.path.polygons.projected(a_trimesh.convex_hull, normal_b, origin_b)
+        projected_a = trimesh.path.polygons.projected(
+            a_trimesh.convex_hull, normal_b, origin_b
+        )
         res = projected_a.within(projected_b.buffer(1e-2))
         if not res:
-            OOB_objs.append(name)
+            OOB_objs.append(map_names[name])
+    # collision_objs=["MetaCategoryFactory(2675461).spawn_asset(3827780)","MetaCategoryFactory(160109).spawn_asset(3161408)"]
     OOB = len(OOB_objs)
-    print("OOB: ",OOB)
+    print("OOB: ", OOB)
+    # state.trimesh_scene.show()
     
-    touch = any_touching(
-        scene,
-        collision_objs,
-        collision_objs,
-        bvh_cache=state.bvh_cache
-    )
-    collide_pairs = [[name1,name2] for name1,name2 in touch.names if name1!=name2]
+   
+
+    
+    collide_pairs = []
+    # for name1 in collision_objs:
+    #     for name2 in collision_objs: 
+    #         scene = state.trimesh_scene
+    #         mesh1 = scene.geometry[name1+"_mesh"]
+    #         mesh2 = scene.geometry[name2+"_mesh"]
+    #         intersection = mesh1.intersection(mesh2)
+    #         # Check if result is valid and compute volume
+    #         if intersection.is_volume:
+    #             volume = intersection.volume
+    #             a = 1
+    for name in collision_objs:
+        touch = any_touching(
+            scene, name, collision_objs, bvh_cache=state.bvh_cache
+        )
+        if name =='BookStackFactory(2453217).spawn_asset(5393884)':
+            a = 1
+        if isinstance(touch.names[0], str):
+            touch_names = [touch.names[0]]
+        elif len(touch.names[0])==len(collision_objs)-1:
+            continue
+        else:
+            touch_names = touch.names[0]
+        threshold = 0.001
+        for contact in touch.contacts:
+            if contact.depth > threshold:
+                # import pdb
+                # pdb.set_trace()
+                name_col = list(contact.names)
+                name_col.remove("__external")
+                name_col = name_col[0]
+                if name_col != name:
+                    name1 = map_names[name_col]
+                    name2 = map_names[name]
+                    collide_pair = [max(name1,name2),min(name1,name2)] 
+                    if collide_pair not in collide_pairs:
+                        collide_pairs.append(collide_pair)
+                        # scene = state.trimesh_scene
+                        # # print(scene.geometry.keys())  # prints the names like ['Cube', 'Plane', 'Mesh_01', ...]
+
+                        # # Pick two meshes by name
+                        # mesh1 = scene.geometry[name_col+"_mesh"]
+                        # mesh2 = scene.geometry[name+"_mesh"]
+
+                        # # Combine them into a new scene
+                        # combined_scene = trimesh.Scene()
+                        # combined_scene.add_geometry(mesh1)
+                        # combined_scene.add_geometry(mesh2)
+                        # # Show the combined scene
+                        # combined_scene.show()
+        # for name_col in touch_names :
+        #     if name_col != name:
+        #         name1 = map_names[name_col]
+        #         name2 = map_names[name]
+        #         collide_pair = [max(name1,name2),min(name1,name2)] 
+        #         if collide_pair not in collide_pairs:
+        #             collide_pairs.append(collide_pair)
+        #             scene = state.trimesh_scene
+        #             # print(scene.geometry.keys())  # prints the names like ['Cube', 'Plane', 'Mesh_01', ...]
+
+        #             # Pick two meshes by name
+        #             mesh1 = scene.geometry[name_col+"_mesh"]
+        #             mesh2 = scene.geometry[name+"_mesh"]
+
+        #             # Combine them into a new scene
+        #             combined_scene = trimesh.Scene()
+        #             combined_scene.add_geometry(mesh1)
+        #             combined_scene.add_geometry(mesh2)
+        #             # Show the combined scene
+        #             combined_scene.show()
+
+    collide_names = collide_pairs
+
+        # collide_pairs = [[map_names[name1], map_names[name2]] for name1, name2 in touch.names if name1 != name2]
+    # collide_names = list(set([map_names[name1] for name1, name2 in touch.names if name1 != name2]))
     # collide_pairs = [[max(name1,name2),min(name1,name2)] for name1,name2 in touch.names if name1!=name2]
     # collide_pairs = set(collide_pairs)
     BBL = len(collide_pairs)
-    print("BBL: ",BBL)
+    print("BBL: ", BBL)
 
-    return Nobj, OOB, BBL
+    results = {
+        "Nobj":Nobj,
+        "OOB":OOB,
+        "OOB Objects": OOB_objs,
+        "BBL":OOB,
+        "BBL objects": collide_names
+    }
+
+    return results
 
 
-def eval_general_score(image_path_1,layout,image_path_2=None):
+def eval_general_score(image_path_1, layout, image_path_2=None):
     # real = 0
     # func = 0
     # complet = 0
-    
+
     # return real, func, complet
 
-    import base64
-    import requests
-    import json
-    import numpy as np
-    import re
     import argparse
+    import base64
+    import json
+    import re
 
+    import numpy as np
+    import requests
 
     # TODO : OpenAI API Key
     api_key = "YOUR_API_KEY"
@@ -119,9 +178,9 @@ def eval_general_score(image_path_1,layout,image_path_2=None):
     # Function to encode the image
     def encode_image(image_path):
         with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
+            return base64.b64encode(image_file.read()).decode("utf-8")
 
-    example_json ="""
+    example_json = """
     {
     "realism_and_3d_geometric_consistency": {
         "grade": 8,
@@ -145,21 +204,17 @@ def eval_general_score(image_path_1,layout,image_path_2=None):
     base64_image_1 = encode_image(image_path_1)
     # base64_image_2 = encode_image(image_path_2)
 
-
-    headers = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {api_key}"
-    }
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
 
     payload = {
-    "model": "gpt-4-vision-preview",
-    "messages": [
-        {
-        "role": "user",
-        "content": [
+        "model": "gpt-4-vision-preview",
+        "messages": [
             {
-            "type": "text",
-            "text": f"""
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"""
             Give a grade from 1 to 10 or unknown to the following room renders and layout based on how well they correspond together to the user preference (in triple backquotes) in the following aspects: 
             - Realism and 3D Geometric Consistency
             - Functionality and Activity-based Alignment
@@ -173,38 +228,40 @@ def eval_general_score(image_path_1,layout,image_path_2=None):
             ```json
             {example_json}
             ```
-            """
-            },
-            {
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:image/jpeg;base64,{base64_image_1}"
+            """,
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image_1}"
+                        },
+                    },
+                    # {
+                    # "type": "image_url",
+                    # "image_url": {
+                    #     "url" : f"data:image/jpeg;base64,{base64_image_2}"
+                    # }
+                    # }
+                ],
             }
-            },
-            # {
-            # "type": "image_url",
-            # "image_url": {
-            #     "url" : f"data:image/jpeg;base64,{base64_image_2}"
-            # }
-            # }
-        ]
-        }
-    ],
-    "max_tokens": 1024
+        ],
+        "max_tokens": 1024,
     }
     grades = {
-    "realism_and_3d_geometric_consistency": [],
-    "functionality_and_activity_based_alignment": [],
-    "layout_and_furniture": [],
-    # "color_scheme_and_material_choices": [],
-    "completion_and_richness_of_detail": []
+        "realism_and_3d_geometric_consistency": [],
+        "functionality_and_activity_based_alignment": [],
+        "layout_and_furniture": [],
+        # "color_scheme_and_material_choices": [],
+        "completion_and_richness_of_detail": [],
     }
     for _ in range(3):
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions", headers=headers, json=payload
+        )
         grading_str = response.json()["choices"][0]["message"]["content"]
         print(grading_str)
         print("-" * 50)
-        pattern = r'```json(.*?)```'
+        pattern = r"```json(.*?)```"
         matches = re.findall(pattern, grading_str, re.DOTALL)
         json_content = matches[0].strip() if matches else None
         if json_content is None:
@@ -213,11 +270,14 @@ def eval_general_score(image_path_1,layout,image_path_2=None):
             grading = json.loads(json_content)
         for key in grades:
             grades[key].append(grading[key]["grade"])
-    #Save the mean and std of the grades
+    # Save the mean and std of the grades
     for key in grades:
-        grades[key] = {"mean": round(sum(grades[key])/len(grades[key]), 2), "std": round(np.std(grades[key]), 2)}
-    #Save the grades
+        grades[key] = {
+            "mean": round(sum(grades[key]) / len(grades[key]), 2),
+            "std": round(np.std(grades[key]), 2),
+        }
+    # Save the grades
     with open(f"{'_'.join(image_path_1.split('_')[:-1])}_grades.json", "w") as f:
-        json.dump(grades, f)     
+        json.dump(grades, f)
 
     return grades

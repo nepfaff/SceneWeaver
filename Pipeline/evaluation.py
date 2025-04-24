@@ -1,26 +1,29 @@
+
 import json
-import base64
-import requests
-import numpy as np
 import re
-from gpt import GPT4 
-from utils import dict2str
 import time
 
-def eval_scene(iter,user_demand):
+import numpy as np
+import requests
+from gpt import GPT4
+from app.utils import dict2str
+
+
+def eval_scene(iter, user_demand):
     grades, grading = eval_general_score(iter, user_demand)
 
-    with open(f"/home/yandan/workspace/infinigen/record_files/metric_{iter}.json","r") as f:
+    with open(
+        f"/home/yandan/workspace/infinigen/record_files/metric_{iter}.json", "r"
+    ) as f:
         results = json.load(f)
 
     metric = dict()
     metric["GPT score (0-10, higher is better)"] = grading
     metric["Physics score"] = {
-        "object number (higher is better)":results["Nobj"] ,
-        "object not inside the room (lower is better)":results["OOB"],
-        "object has collision (lower is better)":results["BBL"] 
+        "object number (higher is better)": results["Nobj"],
+        "object not inside the room (less is better)": results["OOB"],
+        "object has collision (less is better)": results["BBL"],
     }
-    
 
     json_name = f"/home/yandan/workspace/infinigen/Pipeline/record/metric_{iter}.json"
     with open(json_name, "w") as f:
@@ -29,18 +32,19 @@ def eval_scene(iter,user_demand):
     return metric
 
 
-def eval_general_score(iter,user_demand):
-    basedir = "/home/yandan/workspace/infinigen/record_scene"
+def eval_general_score(iter, user_demand):
+    basedir = "/mnt/fillipo/yandan/scenesage/record_scene/manus/well_designed_bedroom_with__realistic_layout/record_scene/"
     # basedir = "/mnt/fillipo/yandan/scenesage/record_scene/bedroom/record_scene"
-    image_path_1 = f"{basedir}/render_{iter}.jpg"
+    image_path_1 = f"{basedir}/render_{iter}_marked.jpg"
     with open(f"{basedir}/layout_{iter}.json", "r") as f:
         layout = json.load(f)
         layout = layout["objects"]
         layout = dict2str(layout)
 
-    gpt = GPT4(version='4o')
+    # gpt = GPT4(version="4.1",region="eastus2")
+    gpt = GPT4(version="4o")
 
-    example_json ="""
+    example_json = """
 {
   "realism": {
     "grade": your grade as int,
@@ -78,8 +82,8 @@ Evaluation Criteria:
     Positive: The room is designed for function of user's preference. Objects in the room is designed for the related activity.
     Negative: The room does not satisfy the function and activity. The room type mismatch the requirement. In lack of the key object.
 3. Layout: How logically and efficiently the furniture is arranged, and whether the layout matches user preferences for spacing, orientation, or relations between objects.
-    Positive: Objects are well placed. Room is clean and tidy. Relation between objects are reasonable, such as chair face to the desk. Layout matches the user's preference.
-    Negative: Room is messy. Objects are placed in wrong places or placed randomly. Floating objects. Some large objects do not stand close to the wall when they are supposed to, such as large shelf and sofa.
+    Positive: Objects are well placed. Room is clean and tidy. Relation between objects are reasonable, such as chair face to the desk. Layout matches the user's preference. Orientation of each object is correct.
+    Negative: Room is messy. Objects are placed in wrong places or placed randomly. Floating objects. Some large objects do not stand close to the wall when they are supposed to, such as large shelf and sofa. Orientation of some object is incorrect.
 4. Completion: How complete the room is, considering both large furniture and smaller objects like decor, accessories, and everyday items. 
     Positive: Do not need more objects. A complete room correspond to user's preference.
     Negative: Room is empty. Too many blank areas. Seems unfinished.
@@ -96,28 +100,29 @@ Each key in layout is the name for each object, consisting of a random number an
 Note different category name can represent the same category, such as ChairFactory, armchair and chair can represent chair simultaneously.
 Count objects carefully! Do not miss any details.
 
-Return the results in the following JSON format:
+Return the results in the following JSON format, the "comment" should be short:
 {example_json}
 
 For the image:
 Each object is marked with a 3D bounding box and its category label. You must count the object carefully with the given image and layout.
-**3D Convention:**
+
+You are working in a 3D scene environment with the following conventions:
+
 - Right-handed coordinate system.
-- The X-Y plane is the floor; the Z axis points up. The origin is at a corner (the left-top corner of the rendered image), defining the global frame.
-- Asset front faces point along the positive X axis. The Z axis points up. The local origin is centered in X-Y and at the bottom in Z. 
-A 90-degree Z rotation means that the object will face the positive Y axis. The bounding box aligns with the assets local frame.
+- The X-Y plane is the floor.
+- X axis (red) points right, Y axis (green) points forward, Z axis (blue) points up.
+- All asset local origins are centered in X-Y and at the bottom in Z.
+- By default, assets face the +X direction.
+- A rotation of [0, 0, 1.57] in Euler angles will turn the object to face +Y.
+- All bounding boxes are aligned with the local frame and marked in blue with category labels.
+- The front direction of objects are marked with yellow arrow.
+- Coordinates in the image are marked from [0, 0] at bottom-left of the room.
 
-    """
+"""
 
+    prompt_payload = gpt.get_payload_eval(prompting_text_user=prompting_text_user,render_path=image_path_1)
 
-    prompt_payload = gpt.get_payload_eval(prompting_text_user=prompting_text_user)
-
-    grades = {
-        "realism": [],
-        "functionality": [],
-        "layout": [],
-        "completion": []
-    }
+    grades = {"realism": [], "functionality": [], "layout": [], "completion": []}
     for _ in range(1):
         try:
             grading_str = gpt(payload=prompt_payload, verbose=True)
@@ -126,7 +131,7 @@ A 90-degree Z rotation means that the object will face the positive Y axis. The 
             grading_str = gpt(payload=prompt_payload, verbose=True)
         print(grading_str)
         print("-" * 50)
-        pattern = r'```json(.*?)```'
+        pattern = r"```json(.*?)```"
         matches = re.findall(pattern, grading_str, re.DOTALL)
         json_content = matches[0].strip() if matches else None
         if json_content is None:
@@ -136,16 +141,20 @@ A 90-degree Z rotation means that the object will face the positive Y axis. The 
         for key in grades:
             grades[key].append(grading[key]["grade"])
 
-    with open(f"record/grade_iter_{iter}.json","w") as f:
-        json.dump(grading, f, indent=4)  
-    #Save the mean and std of the grades
+    with open(f"metric_{iter}.json", "w") as f:
+        json.dump(grading, f, indent=4)
+    # Save the mean and std of the grades
     for key in grades:
-        grades[key] = {"mean": round(sum(grades[key])/len(grades[key]), 2), "std": round(np.std(grades[key]), 2)}
-    #Save the grades
-    with open(f"record/eval_iter_{iter}.json","w") as f:
-        json.dump(grades, f, indent=4)     
+        grades[key] = {
+            "mean": round(sum(grades[key]) / len(grades[key]), 2),
+            "std": round(np.std(grades[key]), 2),
+        }
+    # Save the grades
+    # with open(f"metric_{iter}.json", "w") as f:
+    #     json.dump(grades, f, indent=4)
 
-    return grades,grading
+    return grades, grading
+
 
 if __name__ == "__main__":
     # grades = {
@@ -163,17 +172,19 @@ if __name__ == "__main__":
     #     # eval_scene(i,"A game room for a 6-year-old boy.")
 
     #     with open(f"record/eval_iter_{i}.json","r") as f:
-    #         j = json.load(f)  
-    #     for key,value in j.items():  
+    #         j = json.load(f)
+    #     for key,value in j.items():
     #         grades[key]["mean"].append(value["mean"])
     #         grades[key]["std"].append(value["std"])
 
     #     with open(f"/home/yandan/workspace/infinigen/record_files/metric_{i}.json","r") as f:
-    #         j = json.load(f)  
-    #     for key,value in j.items():  
+    #         j = json.load(f)
+    #     for key,value in j.items():
     #         grades[key].append(value)
-            
-    
+
     # with open(f"record/eval_iter_0_{i}.json","w") as f:
-    #     json.dump(grades, f) 
-    eval_scene(3, "You must design a scene iteratively using the tools I designed, it must have one large table with eight chairs placing properly next to the table with appropriate size and scale. You can choose to modify the scene by adding and eliminating objects. It should have a large table with comfortable seating for the family and guests.")
+    #     json.dump(grades, f)
+    eval_scene(
+        4,
+        "well designed bedroom with realistic layout.",
+    )

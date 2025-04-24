@@ -69,9 +69,9 @@ class RelationPlaneChange(moves.Move):
         success = dof.try_apply_relation_constraints(
             state, target_name, expand_collision=expand_collision
         )
-        invisible_others()
-        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        visible_others()
+        # invisible_others()
+        # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        # visible_others()
         return success
 
     def revert(self, state: State):

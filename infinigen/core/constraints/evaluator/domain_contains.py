@@ -29,6 +29,8 @@ def domain_contains(dom: r.Domain, state: state_def.State, obj: state_def.Object
             #     and domain_contains(dom, state, state.objs[relstate.target_name])
             #     for relstate in obj.relations
             # ):
+            if obj.relations is None: #TODO YYD
+                return True
             for relstate in obj.relations:
                 a = relstate.relation.intersects(rel.rel)
                 b = domain_contains(dom, state, state.objs[relstate.target_name])
@@ -42,6 +44,8 @@ def domain_contains(dom: r.Domain, state: state_def.State, obj: state_def.Object
                 # logger.debug(f"domain_contains failed, {obj} satisfies negative {rel} {dom}")
                 return False
         else:
+            if obj.relations is None: #TODO YYD
+                return True
             for relstate in obj.relations:
                 a = relstate.relation.intersects(rel)
                 b = domain_contains(dom, state, state.objs[relstate.target_name])

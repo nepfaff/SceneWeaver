@@ -31,6 +31,8 @@ class RandomStageExecutor:
     def _should_run_stage(self, name, use_chance, prereq):
         if prereq is not None:
             try:
+                if prereq=="terrain":
+                    return False
                 e = next(e for e in self.results if e["name"] == prereq)
             except StopIteration:
                 raise ValueError(f"{self} could not find matching name for {prereq=}")

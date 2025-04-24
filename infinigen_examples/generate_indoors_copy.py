@@ -246,57 +246,59 @@ def world_to_image(image_path, output_path):
 
 
 def save_record(state,solver,stages,consgraph):
+    save_dir = os.getenv("save_dir")
 
     for obj_name in state.objs.keys():
         state.objs[obj_name].obj = state.objs[obj_name].obj.name
     state.trimesh_scene = None
     state.bvh_cache = None
-    with open("record_files/state.pkl", "wb") as file:
+    with open(f"{save_dir}/record_files/state.pkl", "wb") as file:
         pickle.dump(state, file)
 
     tagging.tag_system.save_tag()
 
-    with open("record_files/solver.pkl", "wb") as file:
+    with open(f"{save_dir}/record_files/solver.pkl", "wb") as file:
         pickle.dump(solver, file)
 
-    with open("record_files/stages.pkl", "wb") as file:
+    with open(f"{save_dir}/record_files/stages.pkl", "wb") as file:
         pickle.dump(stages, file)
 
-    with open("record_files/consgraph.pkl", "wb") as file:
+    with open(f"{save_dir}/record_files/consgraph.pkl", "wb") as file:
         pickle.dump(consgraph, file)
 
-    save_path = "record_files/scene.blend"
+    save_path = f"{save_dir}/record_files/scene.blend"
     bpy.ops.wm.save_as_mainfile(filepath=save_path)
 
-    env_file = "record_files/env.pkl"
+    env_file = f"{save_dir}/record_files/env.pkl"
     with open(env_file, "wb") as f:
         pickle.dump(dict(os.environ), f)
 
     return 
 
 def load_record():
-    with open("record_files/solver.pkl", "rb") as file:
+    save_dir = os.getenv("save_dir")
+    with open(f"{save_dir}/record_files/solver.pkl", "rb") as file:
         solver = pickle.load(file)
 
-    with open("record_files/stages.pkl", "wb") as file:
+    with open(f"{save_dir}/record_files/stages.pkl", "wb") as file:
         stages = pickle.load(file)
 
-    with open("record_files/consgraph.pkl", "wb") as file:
+    with open(f"{save_dir}/record_files/consgraph.pkl", "wb") as file:
         consgraph = pickle.load(file)
 
     tagging.tag_system.load_tag()
 
-    save_path = "record_files/scene.blend"
+    save_path = f"{save_dir}/record_files/scene.blend"
     bpy.ops.wm.open_mainfile(filepath=save_path)
 
-    with open("record_files/state.pkl", "rb") as file:
+    with open(f"{save_dir}/record_files/state.pkl", "rb") as file:
         state = pickle.load(file)
     for obj_name in state.objs.keys():
         state.objs[obj_name].obj = bpy.data.objects.get(state.objs[obj_name].obj)
     state.__post_init__()
     solver.state = state
 
-    with open("record_files/env.pkl", "rb") as f:
+    with open(f"{save_dir}/record_files/env.pkl", "rb") as f:
         env_vars = pickle.load(f)
     os.environ.update(env_vars)
 

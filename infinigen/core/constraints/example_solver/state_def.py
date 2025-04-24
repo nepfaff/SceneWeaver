@@ -148,11 +148,13 @@ class State:
             )
 
     def __post_init__(self):
-        
         bpy_objs = [o.obj for o in self.objs.values() if o.obj is not None]
+        bpy_objs_asset = [bpy.data.objects.get(o.populate_obj) for o in self.objs.values() if hasattr(o, 'populate_obj')]
 
+        bpy_objs += bpy_objs_asset
         self.trimesh_scene = parse_scene.parse_scene(bpy_objs)
         self.planes = Planes()
+
 
     def save(self, filename: str):
         return

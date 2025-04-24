@@ -151,6 +151,23 @@ class Addition(moves.Move):
         logger.debug(f"{self} {success=}")
         return success
 
+    def remove_onfloor_rel(self,gen_class,gen,T=0.3):
+        from infinigen_examples.steps.tools import export_relation
+        if self.relation_assignments is None:
+            return 
+            
+        if gen_class.__name__ == "MetaCategoryFactory" and gen.location_orig[2]>T:
+            new_assignments = []
+            for rel in self.relation_assignments:
+                relname = export_relation(rel.relation)
+                if relname != "onfloor":
+                    new_assignments.append(rel)
+                else:
+                    continue
+            self.relation_assignments = new_assignments
+
+        return
+
     def apply_init(
         self,
         state: State,
@@ -165,17 +182,21 @@ class Addition(moves.Move):
         
         assert target_name not in state.objs
         import copy
-
+        if "keyboard" in target_name:
+            a = 1
         self._new_obj, gen = sample_rand_placeholder(gen_class)
         
         if size is not None:
             self._new_obj = resize_obj(self._new_obj, size)
 
         parse_scene.add_to_scene(state.trimesh_scene, self._new_obj, preprocess=True)
+        
 
         tags = self.temp_force_tags.union(usage_lookup.usages_of_factory(gen.__class__))
 
         assert isinstance(self._new_obj, bpy.types.Object)
+        self.remove_onfloor_rel(gen_class,gen)
+
         objstate = ObjectState(
             obj=self._new_obj,
             generator=gen,
@@ -185,6 +206,7 @@ class Addition(moves.Move):
         )
 
         state.objs[target_name] = objstate
+        dof.apply_relations_surfacesample(state, target_name,closest_surface=True)
 
         # name = "SofaFactory(1351066).bbox_placeholder(2179127)"
         name = self._new_obj.name
@@ -209,9 +231,10 @@ class Addition(moves.Move):
         # visible_others()
         
                 
-
-        iu.translate(state.trimesh_scene, name, position)
-        iu.rotate(state.trimesh_scene, name, np.array([0, 0, 1]), rotation)
+        iu.set_location(state.trimesh_scene, name, position)
+        iu.set_rotation(state.trimesh_scene, name, [0,0,rotation])
+        # iu.translate(state.trimesh_scene, name, position)
+        # iu.rotate(state.trimesh_scene, name, np.array([0, 0, 1]), rotation)
 
         if state.objs[target_name].relations is not None:
             success = dof.try_apply_relation_constraints(
@@ -220,7 +243,7 @@ class Addition(moves.Move):
                 expand_collision=expand_collision,
                 n_try_resolve=1,
                 use_initial=True,
-                closest_surface=False,  #TODO YYD
+                closest_surface=True,  #TODO YYD
             )  # check
             logger.debug(f"{self} {success=}")
             return success

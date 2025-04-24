@@ -102,6 +102,7 @@ def compose_indoors(
 
     # p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
     os.environ["JSON_RESULTS"] = json_name
+    save_dir = os.getenv("save_dir")
     if iter == 0 and action != "add_relation":
         p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
         p, terrain = basic_scene.basic_scene(
@@ -118,89 +119,94 @@ def compose_indoors(
             state, stages, limits, solver, p
         )
 
-        match action:
-            case "init_physcene":
-                state, solver = init_graph.init_physcene(
-                    stages, limits, solver, state, p
-                )
+        if action== "init_physcene":
+            state, solver = init_graph.init_physcene(
+                stages, limits, solver, state, p
+            )
 
-            case "init_metascene":
-                state, solver = init_graph.init_metascene(
-                    stages, limits, solver, state, p
-                )
-            case "init_gpt":
-                solver.load_gpt_results()
-                state, solver = init_graph.init_gpt(stages, limits, solver, state, p)
-
-            case _:
-                raise ValueError(f"Action is wrong: {action}")
+        elif action== "init_metascene":
+            state, solver = init_graph.init_metascene(
+                stages, limits, solver, state, p
+            )
+        elif action== "init_gpt":
+            solver.load_gpt_results()
+            state, solver = init_graph.init_gpt(stages, limits, solver, state, p)
+        else:
+            raise ValueError(f"Action is wrong: {action}")
     else:
         if inplace:
             load_iter = iter
+            os.system(f"cp {save_dir}/record_scene/render_{iter}_marked.jpg {save_dir}/record_scene/render_{iter}_marked_inplaced.jpg")
+            os.system(f"cp {save_dir}/record_scene/render_{iter}.jpg {save_dir}/record_scene/render_{iter}_inplaced.jpg")
         else:
             load_iter = iter - 1
         p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
         state, solver, terrain, house_bbox, solved_bbox, _ = record.load_scene(
             load_iter
         )
+        save_path = "debug1.blend"
+        bpy.ops.wm.save_as_mainfile(filepath=save_path)
         camera_rigs = [bpy.data.objects.get("CameraRigs/0")]
-        match action:
-            case "add_relation":
-                state, solver = update_graph.add_new_relation(solver, state, p)
-            case "solve_large":
-                state, solver = solve_objects.solve_large_object(
-                    stages, limits, solver, state, p, consgraph, overrides
-                )
-            case "solve_medium":
-                state, solver = solve_objects.solve_medium_object(
-                    stages, limits, solver, state, p, consgraph, overrides
-                )
-            case "solve_large_and_medium":
-                state, solver = solve_objects.solve_large_and_medium_object(
-                    stages, limits, solver, state, p, consgraph, overrides
-                )
-            case "solve_small":
-                state, solver = solve_objects.solve_small_object(
-                    stages, limits, solver, state, p, consgraph, overrides
-                )
-            case "add_gpt":
-                state, solver = update_graph.add_gpt(stages, limits, solver, state, p)
-            case "add_acdc":
-                state, solver = update_graph.add_acdc(solver, state, p, description)
-            case "add_rule":
-                state, solver = update_graph.add_rule(stages, limits, solver, state, p)
-            case "export_supporter":
-                record.export_supporter(
-                    state, obj_name=description, export_path="record_files/obj.blend"
-                )
-                sys.exit()
-            case "update":
-                state, solver = update_graph.update(solver, state, p)
-            case "modify":
-                state, solver = update_graph.modify(stages, limits, solver, p)
-            case "finalize_scene":
-                solved_rooms = [bpy.data.objects["newroom_0-0"]]
-                height = complete_structure.finalize_scene(
-                    overrides,
-                    stages,
-                    state,
-                    solver,
-                    output_folder,
-                    p,
-                    terrain,
-                    solved_rooms,
-                    house_bbox,
-                    camera_rigs,
-                )
-            case _:
-                raise ValueError(f"Action is wrong: {action}")
+        if action=="add_relation":
+            state, solver = update_graph.add_new_relation(solver, state, p)
+            # case "solve_large":
+            #     state, solver = solve_objects.solve_large_object(
+            #         stages, limits, solver, state, p, consgraph, overrides
+            #     )
+            # case "solve_medium":
+            #     state, solver = solve_objects.solve_medium_object(
+            #         stages, limits, solver, state, p, consgraph, overrides
+            #     )
+            # case "solve_large_and_medium":
+            #     state, solver = solve_objects.solve_large_and_medium_object(
+            #         stages, limits, solver, state, p, consgraph, overrides
+            #     )
+        elif action=="solve_small":
+            state, solver = solve_objects.solve_small_object(
+                stages, limits, solver, state, p, consgraph, overrides
+            )
+        elif action=="add_gpt":
+            state, solver = update_graph.add_gpt(stages, limits, solver, state, p)
+        elif action=="add_acdc":
+            state, solver = update_graph.add_acdc(solver, state, p, description)
+        elif action=="add_rule":
+            state, solver = update_graph.add_rule(stages, limits, solver, state, p)
+        elif action=="export_supporter":
+            record.export_supporter(
+                state, obj_name=description, export_path=f"{save_dir}/record_files/obj.blend"
+            )
+            record_success()
+            sys.exit()
+        elif action=="update":
+            state, solver = update_graph.update(solver, state, p)
+        # case "modify":
+        #     state, solver = update_graph.modify(stages, limits, solver, p)
+        elif action=="finalize_scene":
+            solved_rooms = [bpy.data.objects["newroom_0-0"]]
+            height = complete_structure.finalize_scene(
+                overrides,
+                stages,
+                state,
+                solver,
+                output_folder,
+                p,
+                terrain,
+                solved_rooms,
+                house_bbox,
+                camera_rigs,
+            )
+        else:
+            raise ValueError(f"Action is wrong: {action}")
 
-    solver.del_no_relation_objects()
+    if action not in ["init_physcene","init_metascene"]:
+        solver.del_no_relation_objects()
+        state, solver = solve_objects.solve_large_object(
+            stages, limits, solver, state, p, consgraph, overrides
+        )
 
-    state, solver = solve_objects.solve_large_object(
-        stages, limits, solver, state, p, consgraph, overrides
-    )
-    
+    save_path = "debug.blend"
+    bpy.ops.wm.save_as_mainfile(filepath=save_path)
+
     # state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
     # state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
     record.record_scene(
@@ -209,11 +215,21 @@ def compose_indoors(
 
     evaluate.eval_metric(state,iter)
 
+    record_success()
+
     return {
         "height_offset": height,
         "whole_bbox": house_bbox,
     }
 
+def record_success():
+    with open("args.json", "r") as f:
+        j = json.load(f)
+    
+    with open("args.json", "w") as f:
+        j["success"] = True
+        json.dump(j,f,indent=4)
+    return
 
 def main(args):
     scene_seed = init.apply_scene_seed(args.seed)
@@ -314,6 +330,15 @@ if __name__ == "__main__":
         args.inplace = j["inplace"]
         args.json_name = j["json_name"]
 
-    os.system(f"cp args.json args_{args.iter}.json")
+    with open("/home/yandan/workspace/infinigen/roominfo.json","r") as f:
+        j = json.load(f)
+        save_dir = j["save_dir"]
+        os.environ["save_dir"] = save_dir
+
+    if not os.path.exists(f"{save_dir}/args"):
+        os.system(f"mkdir {save_dir}/args")
+        os.system(f"mkdir {save_dir}/record_files")
+        os.system(f"mkdir {save_dir}/record_scene")
+    os.system(f"cp args.json {save_dir}/args/args_{args.iter}.json")
 
     main(args)

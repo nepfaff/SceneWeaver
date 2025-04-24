@@ -117,8 +117,6 @@ def populate_state_placeholders(state: State, filter=None, final=True):
         os.generator.finalize_assets([os.obj])  # 完成生成器资产的最终处理
         butil.put_in_collection(os.obj, unique_assets)  # 将生成的对象放入唯一资产集合中
 
-
-
         # 查找可能存在的切割器（cutter），如果找到则应用切割操作
         cutter = next(
             (o for o in butil.iter_object_tree(os.obj) if o.name.endswith(".cutter")),
@@ -134,8 +132,7 @@ def populate_state_placeholders(state: State, filter=None, final=True):
                 f"{populate_state_placeholders.__name__} cut {cutter.name=} from {cut_objs=}"
             )
             update_state_mesh_objs += cut_objs  # 更新网格对象列表
-        
-        
+
     unique_assets.hide_viewport = False  # 恢复显示资产集合的视图
     # 如果是最终的处理，则返回
     if final:
@@ -159,7 +156,9 @@ def populate_state_placeholders(state: State, filter=None, final=True):
         )  # 添加到场景
 
 
-def populate_state_placeholders_mid(state: State, filter=None, final=False, update_trimesh=True):
+def populate_state_placeholders_mid(
+    state: State, filter=None, final=False, update_trimesh=True
+):
     # 记录信息，表示正在填充占位符，并记录 final 和 filter 参数的值
     logger.info(f"Populating placeholders {final=} {filter=}")
     # 获取名为 "unique_assets" 的集合，用于存放唯一的资产对象
@@ -177,7 +176,7 @@ def populate_state_placeholders_mid(state: State, filter=None, final=False, upda
             os.generator.__class__, filter
         ):
             continue
-        # 如果对象名包含 "spawn_asset" 则说明已经处理过，跳过此对象 
+        # 如果对象名包含 "spawn_asset" 则说明已经处理过，跳过此对象
         # if hasattr(os, "populate_obj"): #TODO YYD
         #     continue
         if "spawn_asset" in os.obj.name:
@@ -191,13 +190,11 @@ def populate_state_placeholders_mid(state: State, filter=None, final=False, upda
     update_state_mesh_objs = []  # 用于存放需要更新的网格对象信息
     # 遍历目标对象，执行生成和处理
     for i, objkey in enumerate(targets):
-        
         os = state.objs[objkey]
         placeholder = os.obj  # 获取占位符对象
         # if any(obj.name == placeholder.name.replace("bbox_placeholder","spawn_asset") for obj in unique_assets.objects):
         #     continue #TODO YYD
-        
-        
+
         logger.info(f"Populating {i}/{len(targets)} {placeholder.name=}")
         #'ThreedFrontCategoryFactory(2179127).bbox_placeholder(620454)'
         old_objname = placeholder.name  # 记录原对象的名称
@@ -206,13 +203,15 @@ def populate_state_placeholders_mid(state: State, filter=None, final=False, upda
         *_, inst_seed = parse_asset_name(placeholder.name)  # 解析资产名称并提取实例种子
 
         # # 使用生成器生成新的对象，并设置位置、旋转等属性 'ThreedFrontCategoryFactory(2179127).spawn_asset(620454)'
-        populate_obj_name = placeholder.name.replace("bbox_placeholder","spawn_asset").replace("spawn_placeholder","spawn_asset")
+        populate_obj_name = placeholder.name.replace(
+            "bbox_placeholder", "spawn_asset"
+        ).replace("spawn_placeholder", "spawn_asset")
         if any(obj.name == populate_obj_name for obj in unique_assets.objects):
             obj = unique_assets.objects[populate_obj_name]
             obj.location = placeholder.location
-            obj.rotation_euler =placeholder.rotation_euler
-            obj.rotation_euler =placeholder.rotation_euler
-            
+            obj.rotation_euler = placeholder.rotation_euler
+            obj.rotation_euler = placeholder.rotation_euler
+
             scale_x = placeholder.dimensions[0] / obj.dimensions[0]
             scale_y = placeholder.dimensions[1] / obj.dimensions[1]
             scale_z = placeholder.dimensions[2] / obj.dimensions[2]
@@ -221,9 +220,9 @@ def populate_state_placeholders_mid(state: State, filter=None, final=False, upda
             obj.select_set(True)  # Select the object
             bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
         else:
-            if inst_seed=="8946473":
+            if inst_seed == "8946473":
                 a = 1
-            obj = os.generator.spawn_asset( #TODO
+            obj = os.generator.spawn_asset(  # TODO
                 i=int(inst_seed),
                 # placeholder=placeholder,
                 loc=placeholder.location,  # we could use placeholder=pholder here, but I worry pholder may have been modified
@@ -244,7 +243,9 @@ def populate_state_placeholders_mid(state: State, filter=None, final=False, upda
 
                 obj = resize_obj(obj, os.size, apply_transform=False)
             os.generator.finalize_assets([obj])  # 完成生成器资产的最终处理
-            butil.put_in_collection(obj, unique_assets)  # 将生成的对象放入唯一资产集合中
+            butil.put_in_collection(
+                obj, unique_assets
+            )  # 将生成的对象放入唯一资产集合中
 
         # 查找可能存在的切割器（cutter），如果找到则应用切割操作
         cutter = next(
@@ -262,7 +263,7 @@ def populate_state_placeholders_mid(state: State, filter=None, final=False, upda
             )
             update_state_mesh_objs += cut_objs  # 更新网格对象列表
         state.objs[objkey].populate_obj = obj.name
-        
+
     unique_assets.hide_viewport = False  # 恢复显示资产集合的视图
     # 如果是最终的处理，则返回
     if final:
@@ -292,10 +293,10 @@ def populate_state_placeholders_mid(state: State, filter=None, final=False, upda
         for objkey, old_objname in tqdm(
             set(update_state_mesh_objs), desc="Updating trimesh with populated objects"
         ):
-            #populated obj
+            # populated obj
             os = state.objs[objkey]
             obj = bpy.data.objects.get(os.populate_obj)
-            
+
             # 删除旧的 trimesh 对象
             # delete old trimesh
             delete_obj(state.trimesh_scene, obj.name, delete_blender=False)
@@ -305,7 +306,7 @@ def populate_state_placeholders_mid(state: State, filter=None, final=False, upda
             if not final:
                 tagging.tag_canonical_surfaces(obj)  # 标记标准表面
 
-            
             parse_scene.add_to_scene(
                 state.trimesh_scene, obj, preprocess=True
             )  # 添加到场景
+            # print("\n".join(state.trimesh_scene.geometry.keys()))

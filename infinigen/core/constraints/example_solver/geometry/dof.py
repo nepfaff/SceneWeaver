@@ -100,6 +100,9 @@ def combine_rotation_constraints(parent_planes, eps=0.01):
         for name, poly in parent_planes
     ]
 
+    if normals==[]:
+        return np.ones(3)
+    
     # Start with the first constraint
     combined_axis = rotation_constraint(normals[0])
 
@@ -320,7 +323,9 @@ def apply_relations_surfacesample(
     # 检查对象是否有关系
     # 抛出异常：对象没有关系
     if len(obj_state.relations) == 0:
-        raise ValueError(f"Object {name} has no relations")
+        print(f"Object {name} has no relations")
+        return  parent_planes #TODO YYD
+        # raise ValueError(f"Object {name} has no relations")
     # 抛出异常：对象关系超过支持的数量
     elif len(obj_state.relations) > 3:
         raise ValueError(

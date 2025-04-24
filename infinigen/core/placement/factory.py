@@ -11,13 +11,14 @@ import logging
 import typing
 
 import bpy
+import mathutils
 import numpy as np
 from tqdm import trange
 
 from infinigen.assets.utils.object import center
 from infinigen.core.util import blender as butil
 from infinigen.core.util.math import FixedSeed, int_hash
-import mathutils
+
 from . import detail
 
 logger = logging.getLogger(__name__)
@@ -173,8 +174,8 @@ class AssetFactory:
     def post_init(self):
         pass
 
-    def set_origin(self,imported_obj):
-        imported_obj.location = [0,0,0]
+    def set_origin(self, imported_obj):
+        imported_obj.location = [0, 0, 0]
         bbox_corners = [mathutils.Vector(corner) for corner in imported_obj.bound_box]
 
         min_z = min(corner.z for corner in bbox_corners)
@@ -185,11 +186,10 @@ class AssetFactory:
         mean_y = np.mean([corner.y for corner in bbox_corners])
         imported_obj.location.y -= mean_y
 
-        pos_bias = [mean_x,mean_y,min_z]
+        pos_bias = [mean_x, mean_y, min_z]
 
-        bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='BOUNDS')
-        return imported_obj,pos_bias
-
+        bpy.ops.object.origin_set(type="ORIGIN_CURSOR", center="BOUNDS")
+        return imported_obj, pos_bias
 
 
 def make_asset_collection(

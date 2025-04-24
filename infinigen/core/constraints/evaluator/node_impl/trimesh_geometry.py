@@ -428,6 +428,7 @@ def any_touching(
 
     In all cases, returns True if any one object from a and b touch
     """
+    
     # 预处理输入，确保 a、b 和标签的格式一致
     a, b, a_tags, b_tags = preprocess_collision_query_cases(a, b, a_tags, b_tags)
     # 从场景中获取与 a 相关的碰撞检测对象
