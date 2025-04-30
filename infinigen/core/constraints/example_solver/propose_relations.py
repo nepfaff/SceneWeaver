@@ -211,7 +211,11 @@ def find_given_assignments(
     random.shuffle(candidates)
 
     if len(candidates) == 0:  # YYD add
-        yield assignments
+        yield from find_assignments(
+            curr,
+            relations=remaining_relations,
+            assignments=assignments,
+        )
         return
 
     for parent_candidate_name in candidates:  # 遍历候选对象
@@ -221,7 +225,7 @@ def find_given_assignments(
         # 获取当前候选对象的状态
         parent_state = curr.objs[parent_candidate_name]
         # 获取符合关系父标签的平面数量
-        if Subpart.SupportSurface in rel.parent_tags and parent_candidate_name!='newroom_0-0': #TODO YYD
+        if Subpart.SupportSurface in rel.parent_tags and parent_candidate_name!='newroom_0-0' and hasattr(parent_state, "populate_obj"): #TODO YYD
             populate_obj = bpy.data.objects.get(parent_state.populate_obj)
             n_parent_planes = len(
                 curr.planes.get_tagged_planes(populate_obj, rel.parent_tags)
@@ -247,5 +251,74 @@ def find_given_assignments(
             yield from find_assignments(
                 curr,
                 relations=remaining_relations,
+                assignments=assignments + [assignment],
+            )
+
+
+def find_given_assignments_fast(
+    curr: state_def.State,
+    relations: list[tuple[cl.Relation, r.Domain]],
+    assignments: list[state_def.RelationState] = None,
+    parent_obj_name=None,
+) -> typing.Iterator[list[state_def.RelationState]]:
+
+    if assignments is None:
+        assignments = []
+      
+    if len(relations) == 0:
+        yield assignments
+        return
+
+    logger.debug(f"Attempting to assign {relations[0]}")  # 调试信息：尝试分配第一个关系
+
+    # 最小化冗余关系：提取当前关系和剩余关系
+    (rel, dom), remaining_relations, implied = minimize_redundant_relations(relations)
+    assert len(remaining_relations) < len(relations)  # 确保冗余关系被移除
+
+    if implied:  # 如果剩余关系隐含当前关系
+        logger.debug(
+            f"Found remaining_relations implies {(rel, dom)=}, skipping it"
+        )  # 调试信息
+        yield from find_assignments(  # 跳过当前关系，继续处理剩余关系
+            curr, relations=remaining_relations, assignments=assignments
+        )
+        return
+
+    # 获取符合约束域的对象候选列表
+    candidates = [parent_obj_name]
+
+    for parent_candidate_name in candidates:  # 遍历候选对象
+        if parent_candidate_name != "newroom_0-0":
+            parent_candidate_name = parent_obj_name  # when parent is not room, set parent obj name as the given name
+        logging.debug(f"{parent_candidate_name=}")  # 调试信息
+        # 获取当前候选对象的状态
+        parent_state = curr.objs[parent_candidate_name]
+        # 获取符合关系父标签的平面数量
+        if Subpart.SupportSurface in rel.parent_tags and parent_candidate_name!='newroom_0-0' and hasattr(parent_state, "populate_obj"): #TODO YYD
+            populate_obj = bpy.data.objects.get(parent_state.populate_obj)
+            n_parent_planes = len(
+                curr.planes.get_tagged_planes(populate_obj, rel.parent_tags)
+            )
+        else:
+            n_parent_planes = len(
+                curr.planes.get_tagged_planes(parent_state.obj, rel.parent_tags)
+            )
+        # 随机排列父对象的平面顺序
+        parent_order = np.arange(n_parent_planes)
+        np.random.shuffle(parent_order)
+
+        for parent_plane in parent_order:  # 遍历每个平面
+            # logger.debug(f'Considering {parent_candidate_name=} {parent_plane=} {n_parent_planes=}')
+            # 创建一个关系分配实例
+            assignment = state_def.RelationState(
+                relation=rel,  # 当前关系
+                target_name=parent_candidate_name,  # 目标对象
+                child_plane_idx=0,  # TODO fill in at apply()-time
+                parent_plane_idx=parent_plane,  # 当前父对象的平面索引
+            )
+            # 递归处理剩余关系
+            yield from find_assignments(
+                curr,
+                relations=[],
                 assignments=assignments + [assignment],
             )

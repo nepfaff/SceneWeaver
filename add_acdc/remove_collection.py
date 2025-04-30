@@ -16,6 +16,7 @@ def keep_object_from_collections(collection, target_name):
             bpy.data.objects.remove(obj, do_unlink=True)
         else:
             obj.location = [0, 0, 0]
+            obj.rotation_mode = 'XYZ'
             obj.rotation_euler = [0, 0, 0]
             c.objects.link(obj)
             collection.objects.unlink(obj)

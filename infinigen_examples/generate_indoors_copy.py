@@ -255,7 +255,7 @@ def save_record(state,solver,stages,consgraph):
     with open(f"{save_dir}/record_files/state.pkl", "wb") as file:
         pickle.dump(state, file)
 
-    tagging.tag_system.save_tag()
+    tagging.tag_system.save_tag(f"{save_dir}/record_files/MaskTag.json")
 
     with open(f"{save_dir}/record_files/solver.pkl", "wb") as file:
         pickle.dump(solver, file)

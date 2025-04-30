@@ -329,6 +329,8 @@ def _name_for_tagval(i: int) -> str | None:
 def union_object_tags(obj):
     if COMBINED_ATTR_NAME not in obj.data.attributes:
         return set()
+    if obj.name=="MetaCategoryFactory(8823346).spawn_asset(6550758)":
+        a =1
 
     masktag = surface.read_attr_data(obj, COMBINED_ATTR_NAME)
     res = set()

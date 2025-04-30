@@ -145,7 +145,8 @@ class BlueprintSolidifier:
         open_cutters, door_cutters = self.make_interior_cutters(
             neighbours, shared_edges, segments, names
         )
-        exterior_cutters = self.make_exterior_cutters(exterior_edges, names)
+        # exterior_cutters = self.make_exterior_cutters(exterior_edges, names)
+        exterior_cutters = cutters = defaultdict(list)
 
         for k, r in rooms.items():
             r.location[-1] += WALL_HEIGHT * self.level

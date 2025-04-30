@@ -83,6 +83,7 @@ class AssetFactory:
         )
         if not has_sensitive_constraint:
             obj.location = loc
+            obj.rotation_mode = 'XYZ'
             obj.rotation_euler = rot
         else:
             logger.debug(
@@ -164,6 +165,7 @@ class AssetFactory:
         else:
             obj.parent = None
             obj.location = placeholder.location
+            obj.rotation_mode = 'XYZ'
             obj.rotation_euler = placeholder.rotation_euler
             butil.delete(placeholder)
 
@@ -185,8 +187,11 @@ class AssetFactory:
         imported_obj.location.x -= mean_x
         mean_y = np.mean([corner.y for corner in bbox_corners])
         imported_obj.location.y -= mean_y
-
+        # if self.category == "bookshelf":
+        #     import pdb
+        #     pdb.set_trace()
         pos_bias = [mean_x, mean_y, min_z]
+        bpy.context.scene.cursor.location = [0,0,0]
 
         bpy.ops.object.origin_set(type="ORIGIN_CURSOR", center="BOUNDS")
         return imported_obj, pos_bias

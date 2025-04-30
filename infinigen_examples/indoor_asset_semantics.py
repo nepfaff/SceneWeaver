@@ -248,6 +248,7 @@ def home_asset_usage():
             appliances.MonitorFactory,
             elements.RugFactory,
             bathroom.HardwareFactory,
+            elements.RackFactory,
             objaverse_assets.GeneralObjavFactory,
             metascene_assets.GeneralMetaFactory,
             threedfront_assets.GeneralThreedFrontFactory

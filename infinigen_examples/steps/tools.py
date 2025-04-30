@@ -245,6 +245,8 @@ def export_layout(state, solver, save_dir):
                 round(a, 2) for a in list(objinfo.obj.dimensions)
             ]
         else:
+            objinfo.obj.rotation_mode = 'XYZ' 
+            bpy.context.view_layer.update()
             offset_vector = calc_position_bias(objinfo.obj)
             results["objects"][objkey] = dict()
             results["objects"][objkey]["location"] = [
@@ -279,6 +281,7 @@ def export_layout(state, solver, save_dir):
 
 
 def calc_position_bias(obj):
+    bpy.context.view_layer.update()
     # 获取 bounding box 在对象局部空间中的 8 个点
     bbox_corners = [mathutils.Vector(corner) for corner in obj.bound_box]
 
@@ -318,6 +321,7 @@ def render_scene(p, solved_bbox, camera_rigs, state, solver, filename="debug.jpg
         rooms_split["exterior"].hide_viewport = True
         rooms_split["exterior"].hide_render = True
         rooms_split["ceiling"].hide_render = True
+        rooms_split["wall"].hide_render = True
         invisible_to_camera.apply(list(rooms_split["ceiling"].objects))
         invisible_to_camera.apply(
             [o for o in bpy.data.objects if "CeilingLight" in o.name]
@@ -474,6 +478,10 @@ def save_record(state, solver, terrain, house_bbox, solved_bbox, iter, p):
     save_path = f"{save_dir}/record_files/scene_{iter}.blend"
     bpy.ops.wm.save_as_mainfile(filepath=save_path)
 
+    # COMBINED_ATTR_NAME = "MaskTag"
+    # obj = bpy.data.objects.get("MetaCategoryFactory(8823346).spawn_asset(6550758)")
+    # masktag = surface.read_attr_data(obj, COMBINED_ATTR_NAME)
+
     for name in state.trimesh_scene.geometry.keys():
         state.trimesh_scene.geometry[name].fcl_obj = None
         state.trimesh_scene.geometry[name].col_obj = None
@@ -535,7 +543,7 @@ def save_record(state, solver, terrain, house_bbox, solved_bbox, iter, p):
         dill.dump(state, file)
     # print("\n".join(state.trimesh_scene.geometry.keys()))
 
-    tagging.tag_system.save_tag()
+    tagging.tag_system.save_tag(f"{save_dir}/record_files/MaskTag.json")
 
     with open(f"{save_dir}/record_files/solver_{iter}.pkl", "wb") as file:
         dill.dump(solver, file)
@@ -634,7 +642,7 @@ def load_record(iter):
     # with open(f"record_files/camera_rigs_{iter}.pkl", "wb") as file:
     #     camera_rigs = pickle.load(file)
 
-    tagging.tag_system.load_tag()
+    tagging.tag_system.load_tag(f"{save_dir}/record_files/MaskTag.json")
 
     # with open(f"record_files/p_{iter}.pkl", "rb") as file:
     #     p = pickle.load(file)
@@ -716,8 +724,10 @@ def load_record(iter):
         env_vars = pickle.load(f)
     json_name = os.getenv("JSON_RESULTS")
     os.environ.update(env_vars)
+    os.environ["save_dir"] = save_dir
     os.environ["JSON_RESULTS"] = json_name
     # import pdb
     # pdb.set_trace()
     # a = state.trimesh_scene.geometry['MetaCategoryFactory(1251161).spawn_asset(3960590)']
     return state, solver, terrain, house_bbox, solved_bbox, p
+

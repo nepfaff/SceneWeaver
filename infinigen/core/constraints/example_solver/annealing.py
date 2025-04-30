@@ -207,13 +207,17 @@ class SimulatedAnnealingSolver:
                 break  # 退出循环
 
             # succeeded = move.apply(state, expand_collision)
-            try:
-                succeeded = move.apply_gradient(
+            succeeded = move.apply_gradient(
                     state, temp, expand_collision
-                )  # 尝试应用移动到当前状态
+                )
+            # try:
+            #     succeeded = move.apply_gradient(
+            #         state, temp, expand_collision
+            #     )  # 尝试应用移动到当前状态
                 
-            except:
-                succeeded = move.apply(state, expand_collision)
+            # except:
+                # succeeded = move.apply(state, expand_collision)
+                # a = 1
 
             if succeeded:  # 如果成功应用
                 evaluator.evict_memo_for_move(consgraph, state, self.eval_memo, move)

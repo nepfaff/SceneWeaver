@@ -8,16 +8,66 @@ from infinigen.core.constraints.constraint_language import util as iu
 # from infinigen.core import tags as t
 from infinigen.core.constraints.evaluator.node_impl.trimesh_geometry import any_touching
 import os
+from infinigen.core.constraints.constraint_language.util import delete_obj
 
-def eval_metric(state, iter):
-    results = eval_physics_score(state)
+def eval_metric(state, iter,remove_bad=False):
+    results,map_names = eval_physics_score(state,remove_bad=remove_bad)
     save_dir = os.getenv("save_dir")
     with open(f"{save_dir}/record_files/metric_{iter}.json", "w") as file:
         json.dump(results, file, indent=4)
-    return
+
+    with open(f"{save_dir}/record_files/name_map_{iter}.json", "w") as file:
+        json.dump(map_names, file, indent=4)
+    return results
 
 
-def eval_physics_score(state):
+import bpy
+import bmesh
+
+
+def calc_intersection_volume(obj_a, obj_b):
+    # 检查两个物体是否存在
+    if obj_a is None or obj_b is None:
+        print("Objects not found.")
+        return 0.0
+
+    # 复制 A 的数据
+    temp_mesh = obj_a.data.copy()
+    temp_obj = bpy.data.objects.new(name="TempIntersection", object_data=temp_mesh)
+    bpy.context.collection.objects.link(temp_obj)
+    
+    # 选择 temp_obj
+    bpy.context.view_layer.objects.active = temp_obj
+    temp_obj.select_set(True)
+    
+    # 加布尔修改器
+    boolean_mod = temp_obj.modifiers.new(name="Intersect", type='BOOLEAN')
+    boolean_mod.operation = 'INTERSECT'
+    boolean_mod.object = obj_b
+    boolean_mod.solver = 'EXACT'  # 🔥 使用更稳定的 EXACT solver！！
+
+    # 应用 Modifier
+    bpy.ops.object.modifier_apply(modifier=boolean_mod.name)
+
+    # 检查交集是否有面
+    if len(temp_obj.data.polygons) == 0:
+        print("No intersection: resulting mesh is empty.")
+        bpy.data.objects.remove(temp_obj, do_unlink=True)
+        return 0.0
+
+    # 计算体积
+    bm = bmesh.new()
+    bm.from_mesh(temp_obj.data)
+    volume = bm.calc_volume(signed=False)
+    bm.free()
+
+    # 删除临时物体
+    bpy.data.objects.remove(temp_obj, do_unlink=True)
+
+    return volume
+
+
+def eval_physics_score(state,remove_bad=False):
     scene = state.trimesh_scene
     collision_objs = []
     map_names = dict()
@@ -53,7 +103,7 @@ def eval_physics_score(state):
             OOB_objs.append(map_names[name])
     # collision_objs=["MetaCategoryFactory(2675461).spawn_asset(3827780)","MetaCategoryFactory(160109).spawn_asset(3161408)"]
     OOB = len(OOB_objs)
-    print("OOB: ", OOB)
+    print("OOB: ", OOB, OOB_objs)
     # state.trimesh_scene.show()
     
    
@@ -70,15 +120,17 @@ def eval_physics_score(state):
     #         if intersection.is_volume:
     #             volume = intersection.volume
     #             a = 1
-    for name in collision_objs:
+    collision_objs_norug = [i for i in collision_objs if "rug" not in map_names[i]]
+    collide_volume = []
+    for name in collision_objs_norug:
         touch = any_touching(
-            scene, name, collision_objs, bvh_cache=state.bvh_cache
+            scene, name, collision_objs_norug, bvh_cache=state.bvh_cache
         )
-        if name =='BookStackFactory(2453217).spawn_asset(5393884)':
+        if name =='ObjaverseCategoryFactory(1083614).spawn_asset(8785162)':
             a = 1
         if isinstance(touch.names[0], str):
             touch_names = [touch.names[0]]
-        elif len(touch.names[0])==len(collision_objs)-1:
+        elif len(touch.names[0])==len(collision_objs_norug)-1:
             continue
         else:
             touch_names = touch.names[0]
@@ -95,7 +147,16 @@ def eval_physics_score(state):
                     name2 = map_names[name]
                     collide_pair = [max(name1,name2),min(name1,name2)] 
                     if collide_pair not in collide_pairs:
-                        collide_pairs.append(collide_pair)
+                        #check again
+                        # Example usage:
+                        obj1 = state.trimesh_scene.geometry[state.objs[collide_pair[0]].obj.name+"_mesh"]
+                        obj2 = state.trimesh_scene.geometry[state.objs[collide_pair[1]].obj.name+"_mesh"]
+                        vol = trimesh.boolean.boolean_manifold([obj1,obj2],"intersection").volume
+                        # print(f"Intersection volume: {vol:.6f}")
+                        if vol > 0.00001:
+                            print(collide_pair,vol)
+                            collide_volume.append(vol)
+                            collide_pairs.append(collide_pair)
                         # scene = state.trimesh_scene
                         # # print(scene.geometry.keys())  # prints the names like ['Cube', 'Plane', 'Mesh_01', ...]
 
@@ -136,18 +197,21 @@ def eval_physics_score(state):
     # collide_names = list(set([map_names[name1] for name1, name2 in touch.names if name1 != name2]))
     # collide_pairs = [[max(name1,name2),min(name1,name2)] for name1,name2 in touch.names if name1!=name2]
     # collide_pairs = set(collide_pairs)
-    BBL = len(collide_pairs)
-    print("BBL: ", BBL)
+    BBL = len(collide_names)
+    print("BBL: ", BBL, collide_names)
+    # import pdb
+    # pdb.set_trace()
 
     results = {
         "Nobj":Nobj,
         "OOB":OOB,
         "OOB Objects": OOB_objs,
-        "BBL":OOB,
-        "BBL objects": collide_names
+        "BBL":BBL,
+        "BBL objects": collide_names,
+        "collide volume":collide_volume
     }
 
-    return results
+    return results,map_names
 
 
 def eval_general_score(image_path_1, layout, image_path_2=None):
@@ -281,3 +345,32 @@ def eval_general_score(image_path_1, layout, image_path_2=None):
         json.dump(grades, f)
 
     return grades
+
+def del_top_collide_obj(state,iter):
+    results = eval_metric(state,iter)
+    collide_pairs = results["BBL objects"]
+    if len(collide_pairs)==0:
+        return None
+    vol = results["collide volume"]
+    record = dict()
+    for pair,v in zip(collide_pairs,vol):
+        for objname in pair:
+            if objname not in record:
+                record[objname] = 0
+            record[objname] += v
+    # max_key = max(record, key=record.get)
+    max_value = max(record.values())
+    max_keys = [k for k, v in record.items() if v == max_value]
+    obj_volumes = [state.trimesh_scene.geometry[state.objs[max_key].obj.name+"_mesh"].volume for max_key in max_keys]
+    index = obj_volumes.index(min(obj_volumes))
+    max_key = max_keys[index]
+    if "nightstand" in max_key:
+        AssertionError
+
+    print(f"### Object {max_key} has biggest collision volume: {record[max_key]}, remove it !")
+
+    objname = state.objs[max_key].obj.name
+    delete_obj(state.trimesh_scene,objname,delete_blender=True, delete_asset=True)
+    state.objs.pop(max_key)
+
+    return max_key

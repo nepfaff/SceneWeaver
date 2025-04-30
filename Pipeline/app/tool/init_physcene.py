@@ -16,12 +16,13 @@ from app.tool.get_roomsize import get_roomsize
 
 DESCRIPTION="""
 Using neural network to generate a scene as the basic scene.
-Te neural network is trained on the 3D Front indoor dataset.
-Supported Room Types: Living room, bedroom, and dining room.
-Use Case 1: Creates a foundational layout for common room types.
+The neural network is trained on the 3D Front indoor dataset.
 
-Strengths: Fast and flexible, making it ideal for rapid scene prototyping. Offers diverse configurations for living room, bedroom, and dining room. Room is clean and tidy. Assets in good quality.
-Weaknesses: Less details.  
+Supported Room Types: Living room, bedroom, and dining room.
+Use Case 1: Create a foundational layout.
+
+Strengths: Room is clean and tidy. Assets in good quality.
+Weaknesses: Less details. Fixed layout, need to modify with other methods to meet user demand.
 """
 
 
@@ -79,14 +80,14 @@ class InitPhySceneExecute(BaseTool):
                 }
                 json.dump(info, f, indent=4)
                 
-            success = update_infinigen(action, iter, json_name)
+            success = update_infinigen(action, iter, json_name, ideas=ideas)
             assert success
 
             #add relation
             action = "add_relation"
             json_name = add_relation(user_demand, ideas, iter, roomtype)
             success = update_infinigen(
-                action, iter, json_name, inplace=True, invisible=True
+                action, iter, json_name, inplace=True, invisible=True,ideas=ideas
             )
             assert success
 

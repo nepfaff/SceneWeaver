@@ -204,7 +204,7 @@ def get_bbox(state):
         if name.startswith("window") or name == "newroom_0-0" or name == "entrance":
             continue
         obj = state.objs[name].obj
-        cat_name = name.split("_")[1]
+        cat_name = "_".join(name.split("_")[1:])
         if cat_name.endswith("Factory"):
             cat_name = cat_name[:-7]
         add_rotated_bbox_wireframe(obj, cat_name)

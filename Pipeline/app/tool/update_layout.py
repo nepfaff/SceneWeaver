@@ -14,13 +14,15 @@ from app.tool.update_infinigen import update_infinigen
 from app.prompt.gpt.update_gpt import system_prompt,user_prompt
 
 DESCRIPTION="""
-Modify layout and remove objects with GPT. Works with all room types.
+Modify layout with GPT. Works with all room types. 
+This method is not recommended for slight layout adjustments; it is better suited for major changes when necessary.
 
-Use Case 1: Adjusting objects' placement when the layout has collision, out of room, or inproper placement. (e.g., reposition a chair or rescale a table)
-Use Case 2: Remove redundant objects when the scene is crowded or the object is unnecessary. (e.g., eliminate a table in the corner)
+Use Case 1: Adjusting objects' placement when the objects is not well-placed.
+Use Case 2: Change objects' scale when the size does not match the requirement.
 
-Strengths: Highly flexible and adaptable to various room designs. Excels at modifying or removing specific objects.
-Weaknesses: **Can not add objects**. Bad in modify rotation. May lack precision and occasionally overlook details. Can not obey the current relation.
+Strengths: Excels at modifying specific objects.
+Weaknesses:  **Can not add objects**. Can not solve all the problem when the room is crowded. Bad in modify rotation. May lack precision and occasionally overlook details. 
+Can not obey the current relation, such as move object away from the wall when the object is against wall.
 """
 
 
@@ -48,7 +50,7 @@ class UpdateLayoutExecute(BaseTool):
             #find scene
             json_name = self.update_scene_gpt(user_demand, ideas, iter, roomtype)
             # json_name = update_ds(user_demand,ideas,iter,roomtype)
-            success = update_infinigen("update", iter, json_name)
+            success = update_infinigen("update", iter, json_name,ideas=ideas)
             assert success
             return f"Successfully Modify layout with GPT."
         except Exception as e:

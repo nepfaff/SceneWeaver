@@ -13,7 +13,7 @@ More relations can be added according to the relation list and objects' layout.
 
 The optional relation is: 
 1.front_against: child_obj's front faces to parent_obj, and stand very close.
-2.front_to_front: child_obj's  front faces to parent_obj's front, and stand very close.
+2.front_to_front: child_obj's front faces to parent_obj's front, and stand very close.
 3.leftright_leftright: child_obj's left or right faces to parent_obj's left or right, and stand very close. 
 4.side_by_side: child_obj's side(left, right , or front) faces to parent_obj's side(left, right , or front), and stand very close. 
 5.back_to_back: child_obj's back faces to parent_obj's back, and stand very close. 
@@ -24,19 +24,23 @@ The optional relation is:
 9.on_floor: child_obj stand on the parent_obj, which is the floor of the room.
 
 Note child_obj is usually smaller than parent_obj, or child_obj belongs to parent_obj. 
+For example, chair belongs to desk and book belongs to shelf.
 And the child_obj can have no more than one relation with other objects(except for the room).
+If an object is "against_wall", then it can not have other relations with objects.
 Each parent_obj can have less than **four** child_obj on the floor. For example, a table can only have chairs as its children.
 
 **Strict Rule – Must Check Distance:**
 You must check the actual distance between objects before assigning a relation. 
 If the child and parent are not **very close** (i.e. the bboxes' edges are more than 1.0 meter apart) , **you MUST check the necessity of assigning the relation** between them.
-This applies even to typical pairs like chairs and tables, books and shelves, beds and nightstands. Do not infer a relation based on usual arrangement — always check the actual layout.
+This applies even to typical pairs like chairs and tables, books and shelves.
+After check the actual layout, you also need to infer a relation based on usual arrangement.
 
 You are working in a 3D scene environment with the following conventions:
 
 - Right-handed coordinate system.
 - The X-Y plane is the floor.
-- X axis (red) points right, Y axis (green) points forward, Z axis (blue) points up.
+- X axis (red) points right, Y axis (green) points top, Z axis (blue) points up.
+- For the location [x,y,z], x,y means the location of object's center in x- and y-axis, z means the location of the object's bottom in z-axis.
 - All asset local origins are centered in X-Y and at the bottom in Z.
 - By default, assets face the +X direction.
 - A rotation of [0, 0, 1.57] in Euler angles will turn the object to face +Y.
@@ -61,7 +65,8 @@ The relation is written as a list in the "parent" key, in the format of [parent_
 For example, ["newroom_0-0", "onfloor"] means the child_obj is on the floor of the room. Note "newroom_0-0" is not listed in the objetcs' layout.
 And ["2419840_bed","ontop"] means the child_obj is on the top of "2419840_bed".
 Some relations have already been added, and you need to implement the relations when the layout is similar to the relation but not recorded in "parent" explicitly.
-You can take regular usage habits into account.
+You can take regular usage habits into account. If the object is always placed against wall, you need to add this relation regardless of the layout to make the scene reasonable.
+If an object is "against_wall", then it can not have other relations with objects.
 
 Before returning the final results, you need to carefully confirm that each obvious relation has been added. 
 
@@ -82,8 +87,11 @@ For example:
     "1542543_Sofa": {
         "parent": [["newroom_0-0","against_wall"]]
     },
-    "4254546_Cabinet": {
+    "4254546_nightstand": {
         "parent": [["newroom_0-0","against_wall"]]
+    },
+    "8425734_chair": {
+        "parent": [["5363546_bed","front_against"]]
     },
 }
 

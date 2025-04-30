@@ -367,7 +367,7 @@ def propose_relation_plane_change_all(
             if not isinstance(rels.relation, cl.GeometryRelation):
                 continue
             
-            if Subpart.SupportSurface in rels.relation.parent_tags and rels.target_name!='newroom_0-0': #TODO YYD
+            if Subpart.SupportSurface in rels.relation.parent_tags and rels.target_name!='newroom_0-0' and hasattr(state.objs[rels.target_name],"populate_obj"): #TODO YYD
                 target_obj = bpy.data.objects.get(state.objs[rels.target_name].populate_obj)
             else:
                 target_obj = state.objs[rels.target_name].obj

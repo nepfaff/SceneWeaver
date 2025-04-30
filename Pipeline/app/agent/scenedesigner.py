@@ -17,6 +17,7 @@ from app.tool.add_gpt import AddGPTExecute
 from app.tool.add_relation import AddRelationExecute
 from app.tool.update_layout import UpdateLayoutExecute
 from app.tool.update_rotation import UpdateRotationExecute
+from app.tool.remove_obj import RemoveExecute
 from app.tool.terminate import Terminate
 
 from app.tool.tool_collection import ToolCollection
@@ -67,7 +68,9 @@ class SceneDesigner():
             InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
         )
     available_tools1 = ToolCollection(
-            AddAcdcExecute(), AddGPTExecute(), AddRelationExecute(),UpdateLayoutExecute(),UpdateRotationExecute(),Terminate()
+            AddAcdcExecute(), AddGPTExecute(), AddRelationExecute(),
+            UpdateLayoutExecute(),UpdateRotationExecute(),RemoveExecute(),
+            Terminate()
         )
     available_tools2 = ToolCollection(
             Terminate()
@@ -90,18 +93,26 @@ class SceneDesigner():
         return self.memory.messages
     
     def step(self) -> str:
+        if self.current_step!=0:
+            eval_results = self.eval(iter=self.current_step-1)
         """Execute a single step: think and act."""
         should_act = self.think()
         if not should_act:
             return "Thinking complete - no action needed"
+        
         act_results = self.act()
-        if self.memory.messages[-1].name!="terminate":
-            eval_results = self.eval()
+
+        if self.current_step==self.max_steps-1 or \
+            self.tool_calls[0].function.name=="terminate": #evaluate final step 
+            eval_results = self.eval(iter=self.current_step)
+        
+        # if self.memory.messages[-1].name!="terminate":
+        #     eval_results = self.eval(self.current_step)
         return act_results
 
-    def eval(self): 
+    def eval(self,iter): 
         user_demand = os.getenv("UserDemand")
-        iter = int(os.getenv("iter"))
+        # iter = int(os.getenv("iter"))
         grades = eval_scene(iter, user_demand)
         save_dir = os.getenv("save_dir")
         json_name = f"{save_dir}/pipeline/metric_{iter}.json"
@@ -116,13 +127,13 @@ class SceneDesigner():
         logger.info(
             f"🎯 Evaluation Results: '{result}'"
         )
-
+        
         # Add tool response to memory
         user_msg = Message.user_message(result)
         self.memory.add_message(user_msg)
         
 
-        return "\n\n".join(result)
+        return result
     
     def load_sceneinfo(self):
         save_dir = os.getenv("save_dir")
@@ -154,9 +165,13 @@ class SceneDesigner():
             self.messages.append(user_msg)
 
         try:
+            if len(self.messages)>7:
+                messages = [self.messages[0]]+self.messages[-6:]
+            else:
+                messages = self.messages
             # Get response with tool options
             response = self.llm.ask_tool(
-                messages=self.messages,
+                messages=messages,
                 system_msgs=(
                     [Message.system_message(self.system_prompt)]
                     if self.system_prompt
@@ -374,7 +389,7 @@ class SceneDesigner():
 
         results: List[str] = []
 
-        self.current_step = 18
+        self.current_step = 3
         save_dir = os.getenv("save_dir")
         if self.current_step>0:
             with open(f"{save_dir}/pipeline/memory_{self.current_step-1}.pkl", "rb") as file:
@@ -413,13 +428,15 @@ class SceneDesigner():
                 f.write(roomtype)
 
             self.current_step += 1
+            if self.tool_calls[0].function.name=="terminate":
+                self.state = AgentState.FINISHED
+                results.append(f"Terminated: successfullly stop.")
 
+        
         if self.current_step >= self.max_steps:
             self.current_step = 0
             self.state = AgentState.IDLE
             results.append(f"Terminated: Reached max steps ({self.max_steps})")
-
-        
 
         return "\n".join(results) if results else "No steps executed"
     

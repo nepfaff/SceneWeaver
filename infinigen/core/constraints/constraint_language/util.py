@@ -202,17 +202,33 @@ def sample_random_point(polygon):
             return p
 
 
-def delete_obj(scene, a, delete_blender=True):
+
+def delete_obj(scene, a, delete_blender=True, delete_asset=False):
     if isinstance(a, str):
         a = [a]
     if delete_blender:
-        obj_list = [bpy.data.objects[obj_name] for obj_name in a]
+        obj_list = [bpy.data.objects[obj_name] for obj_name in a if obj_name in bpy.data.objects]
         butil.delete(obj_list)
     for obj_name in a:
         # bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)
         if scene:
             scene.graph.transforms.remove_node(obj_name)
             scene.delete_geometry(obj_name + "_mesh")
+
+    if delete_asset:
+        asset_names = [name.replace(
+                "bbox_placeholder", "spawn_asset"
+            ).replace("spawn_placeholder", "spawn_asset") for name in a]
+        asset_names = [name for name in asset_names if name in bpy.data.objects]
+        
+        if delete_blender:
+            obj_list = [bpy.data.objects[obj_name] for obj_name in asset_names]
+            butil.delete(obj_list)
+        for obj_name in asset_names:
+            # bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)
+            if scene:
+                scene.graph.transforms.remove_node(obj_name)
+                scene.delete_geometry(obj_name + "_mesh")
 
 
 def global_vertex_coordinates(obj, local_vertex) -> Vector:
@@ -447,8 +463,21 @@ def sync_trimesh(scene: trimesh.Scene, obj_name: str):  # MARK trimesh
 def translate(scene: trimesh.Scene, a: str, translation):
     blender_obj = bpy.data.objects[a]
     blender_obj.location += Vector(translation)
+    
     if scene:
         sync_trimesh(scene, a)
+
+    asset_name = a.replace(
+            "bbox_placeholder", "spawn_asset"
+        ).replace("spawn_placeholder", "spawn_asset")
+
+    if asset_name in bpy.data.objects:
+        blender_asset_obj = bpy.data.objects.get(asset_name)
+        blender_asset_obj.location = blender_obj.location
+        blender_asset_obj.scale = blender_obj.scale
+        if scene:
+            sync_trimesh(scene, asset_name)
+    
 
 
 def rotate(scene: trimesh.Scene, a: str, axis, angle):  # MARK rotation
@@ -464,17 +493,49 @@ def rotate(scene: trimesh.Scene, a: str, axis, angle):  # MARK rotation
     if scene:
         sync_trimesh(scene, a)
 
+    asset_name = a.replace(
+            "bbox_placeholder", "spawn_asset"
+        ).replace("spawn_placeholder", "spawn_asset")
+
+    if asset_name in bpy.data.objects:
+        blender_asset_obj = bpy.data.objects.get(asset_name)
+        blender_asset_obj.matrix_world = blender_obj.matrix_world 
+        if scene:
+            sync_trimesh(scene, asset_name)
 
 def set_location(scene: trimesh.Scene, obj_name: str, location):
     blender_mesh = bpy.data.objects[obj_name]
     blender_mesh.location = location
     sync_trimesh(scene, obj_name)
 
+    asset_name = obj_name.replace(
+            "bbox_placeholder", "spawn_asset"
+        ).replace("spawn_placeholder", "spawn_asset")
+
+    if asset_name in bpy.data.objects:
+        blender_asset_obj = bpy.data.objects.get(asset_name)
+        blender_asset_obj.location = blender_mesh.location
+        blender_asset_obj.scale = blender_mesh.scale
+        if scene:
+            sync_trimesh(scene, asset_name)
+
 
 def set_rotation(scene: trimesh.Scene, obj_name: str, rotation):
     blender_mesh = blender_objs_from_names(obj_name)[0]
     blender_mesh.rotation_euler = rotation
     sync_trimesh(scene, obj_name)
+
+    asset_name = obj_name.replace(
+            "bbox_placeholder", "spawn_asset"
+        ).replace("spawn_placeholder", "spawn_asset")
+
+    if asset_name in bpy.data.objects:
+        blender_asset_obj = bpy.data.objects.get(asset_name)
+        blender_asset_obj.rotation_mode = 'XYZ'
+        blender_asset_obj.rotation_euler = blender_mesh.rotation_euler
+        blender_asset_obj.scale = blender_mesh.scale
+        if scene:
+            sync_trimesh(scene, asset_name)
 
 
 # for debugging. does not actually find centroid

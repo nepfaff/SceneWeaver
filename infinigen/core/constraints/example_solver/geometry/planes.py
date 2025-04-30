@@ -213,11 +213,13 @@ class Planes:
         obj_tags = relation.child_tags
         parent_tags = relation.parent_tags
 
-        if Subpart.SupportSurface in parent_tags and relation_state.target_name!='newroom_0-0': #TODO YYD
+        if Subpart.SupportSurface in parent_tags and relation_state.target_name!='newroom_0-0' \
+            and hasattr(state.objs[relation_state.target_name],"populate_obj"): #TODO YYD
             parent_obj = bpy.data.objects.get(state.objs[relation_state.target_name].populate_obj)
         else:
             parent_obj = state.objs[relation_state.target_name].obj
-
+        if name == "1603808_dumbbell":
+            a = 1
         parent_all_planes = self.get_tagged_planes(parent_obj, parent_tags)
         obj_all_planes = self.get_tagged_planes(
             obj, obj_tags
@@ -295,9 +297,14 @@ class Planes:
         # state.planes.get_tagged_submesh_prefast(state.trimesh_scene, parent_obj.name, parent_tags, parent_all_planes)
         print("Getting the closest surface of ",parent_obj.name)
         for idx, parent_plane in tqdm(enumerate(parent_all_planes)):
-            parent_plane_trimesh = state.planes.get_tagged_submesh_fast(
-                state.trimesh_scene, parent_obj.name, parent_tags, parent_plane
-            )
+            if parent_obj.name=="newroom_0-0":
+                parent_plane_trimesh = state.planes.get_tagged_submesh(
+                    state.trimesh_scene, parent_obj.name, parent_tags, parent_plane
+                )
+            else:
+                parent_plane_trimesh = state.planes.get_tagged_submesh_fast(
+                    state.trimesh_scene, parent_obj.name, parent_tags, parent_plane
+                )
             
             # print(parent_obj.name,idx,len(parent_all_planes))
             distance = trimesh.proximity.signed_distance(parent_plane_trimesh, center)

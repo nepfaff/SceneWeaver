@@ -101,7 +101,8 @@ You are working in a 3D scene environment with the following conventions:
 
 - Right-handed coordinate system.
 - The X-Y plane is the floor.
-- X axis (red) points right, Y axis (green) points forward, Z axis (blue) points up.
+- X axis (red) points right, Y axis (green) points top, Z axis (blue) points up.
+- For the location [x,y,z], x,y means the location of object's center in x- and y-axis, z means the location of the object's bottom in z-axis.
 - All asset local origins are centered in X-Y and at the bottom in Z.
 - By default, assets face the +X direction.
 - A rotation of [0, 0, 1.57] in Euler angles will turn the object to face +Y.

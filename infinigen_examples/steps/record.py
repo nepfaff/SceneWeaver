@@ -53,6 +53,7 @@ def export_supporter(state, obj_name, export_path):
             bpy.ops.wm.save_as_mainfile(
                 filepath=export_path, check_existing=False, compress=False, copy=True
             )
+            
 
             # Open the new file
             bpy.ops.wm.open_mainfile(filepath=export_path)
@@ -62,6 +63,11 @@ def export_supporter(state, obj_name, export_path):
                     bpy.data.objects.remove(o, do_unlink=True)
             # Save only the remaining object
             bpy.ops.wm.save_as_mainfile(filepath=export_path)
+            
+            candidate = "/home/yandan/workspace/infinigen/record_files/obj.blend"
+            bpy.ops.wm.save_as_mainfile(
+                filepath=candidate, check_existing=False, compress=False, copy=True
+            )
 
         return
 

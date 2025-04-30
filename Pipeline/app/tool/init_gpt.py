@@ -12,16 +12,17 @@ from app.utils import extract_json, dict2str, lst2str
 import json
 
 from app.tool.update_infinigen import update_infinigen
-from app.tool.add_relation import add_relation
 
 import app.prompt.gpt.init_gpt as prompts
 
 DESCRIPTION="""
 Using GPT to generate the foundamental scene.
-Room Type Diversity: Not limited to any specific room types.
 
-Strengths: Highly versatile and capable of generating scenes for any room type. Flexible with respect to room design and customization.
-Weaknesses: May not be as real or accurate as data-driven methods. 
+Supported Room Types: any room type.
+Use Case 1: Create a foundational layout.
+
+Strengths: Align well with user demand. Highly versatile and capable of generating scenes for any room type and complex user requirement. Flexible with respect to room design and customization.
+Weaknesses: May not be as real as data-driven methods. 
 
 """
 
@@ -67,8 +68,8 @@ class InitGPTExecute(BaseTool):
         try:
             #init scene
             json_name, roomsize = self.gen_gpt_scene(user_demand, ideas, roomtype)
-            
-            with open("/home/yandan/workspace/infinigen/roominfo.json", "w") as f:
+            save_dir = os.getenv("save_dir")
+            with open(f"/home/yandan/workspace/infinigen/roominfo.json", "w") as f:
                 info = {
                     "action": action,
                     "ideas": ideas,
@@ -77,16 +78,9 @@ class InitGPTExecute(BaseTool):
                     "save_dir":os.getenv("save_dir")
                 }
                 json.dump(info, f, indent=4)
+            os.system(f"cp /home/yandan/workspace/infinigen/roominfo.json {save_dir}/roominfo.json")
                 
-            success = update_infinigen(action, iter, json_name)
-            assert success
-
-            #add relation
-            action = "add_relation"
-            json_name = add_relation(user_demand, ideas, roomtype)
-            success = update_infinigen(
-                action, iter, json_name, inplace=True, invisible=True
-            )
+            success = update_infinigen(action, iter, json_name,ideas=ideas)
             assert success
 
             return f"Successfully initialize scene with GPT."

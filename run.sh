@@ -19,3 +19,8 @@ python -m infinigen.launch_blender -m infinigen_examples.generate_indoors -- --s
 
 
 # ffmpeg -framerate 2 -i render_%d.jpg -vf "scale=1280:-1:flags=lanczos" -loop 0 output.gif
+# from infinigen_examples.util.visible import invisible_others, visible_others
+
+# invisible_others(hide_placeholder=True)
+# bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+# visible_others()

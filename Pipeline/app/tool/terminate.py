@@ -30,7 +30,7 @@ class Terminate(BaseTool):
         try:
             success = update_infinigen("finalize_scene", iter, "")
             assert success
-            return f"Successfully Modify layout with GPT."
+            return f"Successfully terminate."
         except Exception as e:
-            return f"Error Modify layout with GPT"
+            return f"Error terminate"
         return f"The scene synthesis has been completed with status: {status}"

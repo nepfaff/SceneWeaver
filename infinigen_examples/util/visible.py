@@ -31,6 +31,22 @@ def invisible_others(hide_placeholder=False, hide_all=False):
         mesh.hide_render = True
     return
 
+def invisible_wall():
+
+    # rooms_split["exterior"].hide_viewport = True
+    # rooms_split["exterior"].hide_render = True
+    mesh = butil.get_collection("unique_assets:room_ceiling")
+    mesh.hide_viewport = True
+    mesh.hide_render = True
+
+    mesh = butil.get_collection("unique_assets:room_wall")
+    mesh.hide_viewport = True
+    mesh.hide_render = True
+    mesh = butil.get_collection("unique_assets:windows")
+    mesh.hide_viewport = True
+    mesh.hide_render = True
+
+    return
 
 def visible_others(view_all=False):
     if view_all:

@@ -49,7 +49,7 @@ class UpdateRotationExecute(BaseTool):
             #find scene
             json_name = self.update_scene_gpt(user_demand, ideas, iter, roomtype)
             # json_name = update_ds(user_demand,ideas,iter,roomtype)
-            success = update_infinigen("update", iter, json_name)
+            success = update_infinigen("update", iter, json_name,ideas=ideas)
             assert success
             return f"Successfully Modify rotation with GPT."
         except Exception as e:

@@ -215,7 +215,7 @@ def check_init_valid(
 
     # Check and apply rotations for subsequent planes
     # # 对后续平面进行检查和旋转
-    if name == "620454_LargeShelfFactory":
+    if name == "60910_nightstand":
         a = 1
     for i in range(1, len(obj_planes)):
         a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(i)  # z axies
@@ -309,6 +309,8 @@ def project(points, plane_normal):
 def apply_relations_surfacesample(
     state: state_def.State, name: str, use_initial=False, closest_surface=False
 ):
+    if name =="1603808_dumbbell":
+        a = 1
     obj_state = state.objs[name]  # 获取指定对象的状态
     obj_name = obj_state.obj.name
 
@@ -342,7 +344,8 @@ def apply_relations_surfacesample(
             )
         # 获取父对象
         if  Subpart.SupportSurface in relation_state.relation.parent_tags and \
-            relation_state.target_name!='newroom_0-0':  #TODO YYD
+            relation_state.target_name!='newroom_0-0' and hasattr(state.objs[relation_state.target_name],"populate_obj") and \
+            hasattr(state.objs[relation_state.target_name],"populate_obj"):  #TODO YYD
             parent_obj = bpy.data.objects.get(state.objs[relation_state.target_name].populate_obj)
         else:
             parent_obj = state.objs[relation_state.target_name].obj
@@ -505,8 +508,8 @@ def apply_relations_surfacesample(
         assert len(parent_planes) == 1, (name, len(parent_planes))  # 确保父平面数量为1
         # 遍历对象的关系
         for i, relation_state in enumerate(obj_state.relations):
-            if  Subpart.SupportSurface in relation_state.relation.parent_tags and \
-                relation_state.target_name!='newroom_0-0':  #TODO YYD
+            if Subpart.SupportSurface in relation_state.relation.parent_tags and \
+                relation_state.target_name!='newroom_0-0' and hasattr(state.objs[relation_state.target_name],"populate_obj"):  #TODO YYD
                 parent_obj = bpy.data.objects.get(state.objs[relation_state.target_name].populate_obj)
             else:
                 parent_obj = state.objs[relation_state.target_name].obj

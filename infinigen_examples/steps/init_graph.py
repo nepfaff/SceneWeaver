@@ -28,6 +28,19 @@ def init_physcene(stages,limits,solver,state,p):
     # endregion
     return state,solver
 
+
+def init_idesign(stages,limits,solver,state,p):
+    solver.init_graph_idesign()
+        
+    return solver.state,solver
+
+
+def init_layoutgpt(stages,limits,solver,state,p):
+    solver.init_graph_layoutgpt()
+        
+    return solver.state,solver
+
+
 def init_gpt(stages,limits,solver,state,p):
    # region init large physcene
     def init_graph_gpt(this_stage):

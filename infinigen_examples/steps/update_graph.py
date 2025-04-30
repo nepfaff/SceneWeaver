@@ -46,6 +46,14 @@ def modify(solver, state, p):
     return state
 
 
+def remove_object(solver, state, p):
+    def remove_obj():
+        solver.remove_object()
+        return solver.state
+
+    state = p.run_stage("remove_object", remove_obj, use_chance=False, default=state)
+    return state
+
 def add_new_relation(solver, state, p):
     def add_relation():
         solver.add_relation()

@@ -7,7 +7,7 @@ For each object, check for rotation issues such as:
 1. Facing away from functional targets. e.g., a chair not facing a desk, a TV facing a wall.
 2. Backwards placement. e.g., bed headboard against the open space instead of the wall.
 3. Not aligned with room geometry. e.g., objects diagonally rotated in a square room with no justification.
-4. Obstructed orientation. e.g., a chair facing a wall or window with no clearance.
+4. Obstructed orientation. e.g., a chair facing a wall or window with no clearance. Nothing should face the wall. 
 5. Inconsistent alignment with other furniture. e.g., dining chairs misaligned around a table.
 
 For each object with a rotation issue:
@@ -24,7 +24,8 @@ You are working in a 3D scene environment with the following conventions:
 
 - Right-handed coordinate system.
 - The X-Y plane is the floor.
-- X axis (red) points right, Y axis (green) points forward, Z axis (blue) points up.
+- X axis (red) points right, Y axis (green) points top, Z axis (blue) points up.
+- For the location [x,y,z], x,y means the location of object's center in x- and y-axis, z means the location of the object's bottom in z-axis.
 - All asset local origins are centered in X-Y and at the bottom in Z.
 - All bounding boxes are aligned with the local frame and marked in blue with category labels.
 - Coordinates in the image are marked from [0, 0] at bottom-left of the room.

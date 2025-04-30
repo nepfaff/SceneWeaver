@@ -11,18 +11,17 @@ You will receive:
 You need to return a dict including:
 1. Room size, including length and width in meters. Make the room a little bit bigger than the regular size.
 2. A list of large-furniture categories that stand on the floor, marked with count. 
-You can refer but not limited to this category list: ['BeverageFridge', 'Dishwasher', 'Microwave', 'Oven', 'Monitor', 'TV', 'BathroomSink', 'StandingSink', 'Bathtub', 'Hardware', 'Toilet', 'AquariumTank', 'DoorCasing', 'GlassPanelDoor', 'LiteDoor', 'LouverDoor', 'PanelDoor', 'NatureShelfTrinkets', 'Pillar', 'CantileverStaircase', 'CurvedStaircase', 'LShapedStaircase', 'SpiralStaircase', 'StraightStaircase', 'UShapedStaircase', 'Pallet', 'Rack',  'DeskLamp', 'FloorLamp', 'Lamp', 'Bed', 'BedFrame', 'BarChair', 'Chair', 'OfficeChair', 'Mattress', 'Pillow', 'ArmChair', 'Sofa', 'CellShelf', 'TVStand', 'Countertop', 'KitchenCabinet', 'KitchenIsland', 'KitchenSpace', 'LargeShelf', 'SimpleBookcase', 'SidetableDesk', 'SimpleDesk', 'SingleCabinet', 'TriangleShelf', 'BookColumn', 'BookStack', 'Sink', 'Tap', 'Vase', 'TableCocktail', 'CoffeeTable', 'SideTable', 'TableDining', 'TableTop', 'Bottle', 'Bowl', 'Can', 'Chopsticks', 'Cup', 'FoodBag', 'FoodBox', 'Fork', 'Spatula', 'FruitContainer', 'Jar', 'Knife', 'Lid', 'Pan', 'LargePlantContainer', 'PlantContainer', 'Plate', 'Pot', 'Spoon', 'Wineglass', 'Balloon', 'RangeHood', 'Mirror']
-Do not return objects like rug. 
-Do not use quota in name, such as baby's or teacher's.
-Enhance the immersion of the scene by incorporating more categories and increasing their quantities.
-The total count of furniture must be larger than 15.
-3. An object list that stand with back against the wall
+    You can refer but not limited to this category list: ['BeverageFridge', 'Dishwasher', 'Microwave', 'Oven', 'Monitor', 'TV', 'BathroomSink', 'StandingSink', 'Bathtub', 'Hardware', 'Toilet', 'AquariumTank', 'DoorCasing', 'GlassPanelDoor', 'LiteDoor', 'LouverDoor', 'PanelDoor', 'NatureShelfTrinkets', 'Pillar', 'CantileverStaircase', 'CurvedStaircase', 'LShapedStaircase', 'SpiralStaircase', 'StraightStaircase', 'UShapedStaircase', 'Pallet', 'Rack',  'DeskLamp', 'FloorLamp', 'Lamp', 'Bed', 'BedFrame', 'BarChair', 'Chair', 'OfficeChair', 'Mattress', 'Pillow', 'ArmChair', 'Sofa', 'CellShelf', 'TVStand', 'Countertop', 'KitchenCabinet', 'KitchenIsland', 'KitchenSpace', 'LargeShelf', 'SimpleBookcase', 'SidetableDesk', 'SimpleDesk', 'SingleCabinet', 'TriangleShelf', 'BookColumn', 'BookStack', 'Sink', 'Tap', 'Vase', 'TableCocktail', 'CoffeeTable', 'SideTable', 'TableDining', 'TableTop', 'Bottle', 'Bowl', 'Can', 'Chopsticks', 'Cup', 'FoodBag', 'FoodBox', 'Fork', 'Spatula', 'FruitContainer', 'Jar', 'Knife', 'Lid', 'Pan', 'LargePlantContainer', 'PlantContainer', 'Plate', 'Pot', 'Spoon', 'Wineglass', 'Balloon', 'RangeHood', 'Mirror']
+    Do not use quota in name, such as baby's or teacher's.
+    Enhance the immersion of the scene by incorporating more categories.
+    Do not add too few or too many objects to make the scene empty or crowded.
+3. An object list that stand with back against the wall.
 4. Relation between different categories when they have a subordinate relationship and stay very close(less than 5 cm).
 The former object is smaller than the latter object, such as chair and table, nightstand and bed. 
 
 
 The optional relation is : 
-1.front_against: obj1's front faces to obj2, and stand very close.
+1.front_against: obj1's front faces to obj2, and stand very close. (obj1 **MUST** not stand against the wall.)
 2.front_to_front: obj1's  front faces to obj2's front, and stand very close.
 3.leftright_leftright: obj1's left or right faces to obj2's left or right, and stand very close. 
 4.side_by_side: obj1's side(left, right , or front) faces to obj2's side(left, right , or front), and stand very close. 
@@ -41,7 +40,7 @@ Here is the example:
     "Room size": [3, 4],
     "Category list of big object": {"bed":"1", "wardrobe":"1", "nightstand":"2", "bench":"1"},
     "Object against the wall": ["bed", "wardrobe", "nightstand"],
-    "Relation between big objects": [["nightstand", "bed", "side_by_side"], ["bench", "bed", "front_to_front"]]
+    "Relation between big objects": [["nightstand", "bed", "leftright_leftright"], ["bench", "bed", "front_to_front"]]
 }
 """
 step_1_big_object_prompt_user = """
@@ -268,7 +267,8 @@ You are working in a 3D scene environment with the following conventions:
 
 - Right-handed coordinate system.
 - The X-Y plane is the floor.
-- X axis (red) points right, Y axis (green) points forward, Z axis (blue) points up.
+- X axis (red) points right, Y axis (green) points top, Z axis (blue) points up.
+- For the location [x,y,z], x,y means the location of object's center in x- and y-axis, z means the location of the object's bottom in z-axis.
 - All asset local origins are centered in X-Y and at the bottom in Z.
 - By default, assets face the +X direction.
 - A rotation of [0, 0, 1.57] in Euler angles will turn the object to face +Y.
@@ -326,7 +326,8 @@ You are working in a 3D scene environment with the following conventions:
 
 - Right-handed coordinate system.
 - The X-Y plane is the floor.
-- X axis (red) points right, Y axis (green) points forward, Z axis (blue) points up.
+- X axis (red) points right, Y axis (green) points top, Z axis (blue) points up.
+- For the location [x,y,z], x,y means the location of object's center in x- and y-axis, z means the location of the object's bottom in z-axis.
 - All asset local origins are centered in X-Y and at the bottom in Z.
 - By default, assets face the +X direction.
 - A rotation of [0, 0, 1.57] in Euler angles will turn the object to face +Y.

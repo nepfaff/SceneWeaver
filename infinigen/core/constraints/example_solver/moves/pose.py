@@ -64,30 +64,49 @@ class TranslateMove(moves.Move):
         (target_name,) = self.names
         restore_pose_backup(state, target_name, self._backup_pose)
 
+    def update_asset_loc(self,state):
+        for objname in state.objs.keys():
+            placeholder = state.objs[objname].obj
+            try:
+                asset = bpy.data.objects.get(state.objs[objname].populate_obj)
+                asset.location = placeholder.location
+                asset.rotation_mode = 'XYZ'
+                asset.rotation_euler = placeholder.rotation_euler
+                asset.scale = placeholder.scale
+            except:
+                continue
+        return 
+    
     def apply_gradient(self, state: State, temperature=None, expand_collision=False):
+        
+        # self.update_asset_loc(state)
+        
         (target_name,) = self.names
-        if target_name=='7438460_a black keyboard':
-            a =1
-
+        # if target_name=='4061705_TVFactory':
+        #     print(state.objs[target_name].obj.location)
         # state.trimesh_scene.show()
         os = state.objs[target_name]
 
         obj_state = state.objs[target_name]
-        if obj_state.obj.name=="ObjaverseCategoryFactory(9247144).bbox_placeholder(584137)":
-            a = 1
+        if "Book" in target_name:
+            import pdb
+        # print("111",state.objs["5865980_BookStackFactory"].obj.location)
         # print(target_name,s "1 ",obj_state.obj.location)
 
         parent_planes = apply_relations_surfacesample(
-            state, target_name, use_initial=True, closest_surface=False ##TODO YYD closest_surface
+            state, target_name, use_initial=True, closest_surface=True ##TODO YYD closest_surface
         )
+        # print("222",state.objs["5865980_BookStackFactory"].obj.location)
         obj_state.dof_matrix_translation = combined_stability_matrix(
             parent_planes
         )  # 平移自由度的合成约束矩阵。
         obj_state.dof_rotation_axis = combine_rotation_constraints(
             parent_planes
         )  # 旋转自由度的约束轴或限制信息
+        # self.update_asset_loc(state)
         # print(target_name, "2 ",obj_state.obj.location)
         # result = validity.check_post_move_validity(
+        # print("333",state.objs["5865980_BookStackFactory"].obj.location)
         result = validity.move_for_relation_and_collision(
             state,
             target_name,
@@ -95,7 +114,7 @@ class TranslateMove(moves.Move):
             return_touch=True,
             use_initial=True,
         )
-
+        # print("444",state.objs["5865980_BookStackFactory"].obj.location)
         # print(target_name, "3 ",obj_state.obj.location)
         success, touch = result
 
@@ -128,10 +147,18 @@ class TranslateMove(moves.Move):
 
         #     self.translation = obj_state.dof_matrix_translation @ random_vector
         # else:
+        if "Book" in target_name:
+            import pdb
         self.translation = self.calc_gradient(
             state.trimesh_scene, state, target_name, touch
         )
+        # if target_name=='4061705_TVFactory':
+        #     print(state.objs[target_name].obj.location)
+        #     print("aaa",self.translation )
+        #     a =1
+
         iu.translate(state.trimesh_scene, os.obj.name, self.translation)
+        # print("555",state.objs["5865980_BookStackFactory"].obj.location)
         # print(target_name, "4 ",obj_state.obj.location)
         # print(target_name,self.translation)
         self._backup_pose = pose_backup(os, dof=False)
@@ -142,7 +169,10 @@ class TranslateMove(moves.Move):
         return success
 
     def calc_gradient(self, scene, state, name, touch):
+        # # usd collision normal as gradient direction
         obj_state = state.objs[name]
+        if name=="5603344_nightstand":
+            a = 1
 
         # record top children
         childnames = set()
@@ -160,7 +190,9 @@ class TranslateMove(moves.Move):
         valid_names = [x for x in touch.names if x != a]
 
         # for _, b in touch.names:
-        for i in range(len(valid_names)):
+        for i in range(len(touch.names)):
+            if touch.names[i] == a:
+                continue
             b = valid_names[i]
             normal = touch.contacts[i].normal
             depth = touch.contacts[i].depth
@@ -170,28 +202,29 @@ class TranslateMove(moves.Move):
             ):  # remove top children's collision
                 continue
 
-            if b not in b_names:
-                b_names.append(b)
-                gradient += normal * depth
+            # if b not in b_names:
+            b_names.append(b)
+            gradient += normal * depth
                 # print(depth,b,name)
 
-        gradient[2] = 0
+        gradient = obj_state.dof_matrix_translation @ gradient
         
+        # gradient[2] = 0
         gradient_norm = np.linalg.norm(gradient)
         if len(b_names) == 0 or gradient_norm == 0:
-            gradient = np.zeros(3)
-        # else:
-            # TRANS_MULT = 0.05
-        #     gradient = gradient / gradient_norm
-        print(gradient)
-        TRANS_MULT = 1
-        translation = TRANS_MULT * obj_state.dof_matrix_translation @ gradient
+            translation = np.zeros(3)
+        else:
+            TRANS_MULT = 0.05
+            translation = TRANS_MULT * gradient / gradient_norm
+        print(translation)
+        
+        # translation = TRANS_MULT * obj_state.dof_matrix_translation @ gradient
 
         return translation
 
     # def calc_gradient(self, scene, state, name, touch):
-    #     if name=="1753306_BookStackFactory":
-    #         import pdb
+    # # usd object centroid as gradient direction
+        
     #     #     pdb.set_trace()
     #     obj_state = state.objs[name]
 
@@ -210,30 +243,46 @@ class TranslateMove(moves.Move):
 
     #     centroid_b_lst = []
     #     b_names = []
+    #     gradient = np.zeros(3)
+    #     if "SingleCabinet" in name:
+    #         import pdb
     #     # for _, b in touch.names:
-    #     for b in touch.names:
+    #     for i in range(len(touch.names)):
+    #         b = touch.names[i]
     #         if b in childnames or b==state.objs[name].obj.name: # remove top children's collision
+    #             continue
+    #         if b.startswith("window"):
     #             continue
     #         T, g = scene.graph[b]  # 获取 b 的变换和几何信息
     #         geom_b = scene.geometry[g]
     #         centroid_b = geom_b.centroid
+    #         depth = touch.contacts[i].depth
     #         if b not in b_names:
     #             b_names.append(b)
-    #             centroid_b_lst.append(centroid_b)
+    #             grad = centroid_a - centroid_b
+    #             grad_norm = np.linalg.norm(grad)
+    #             gradient += grad / grad_norm * depth
+    #             # centroid_b_lst.append(centroid_b)
 
-    #     if centroid_b_lst==[]:
-    #         return [0,0,0]
+    #     # if centroid_b_lst==[]:
+    #     #     return [0,0,0]
 
-    #     centroid_b_mean = np.mean(centroid_b_lst, axis=0)
-    #     if "FloorLampFactory" in name:
-    #         a = 1
-
-    #     gradient = centroid_a - centroid_b_mean
+    #     # centroid_b_mean = np.mean(centroid_b_lst, axis=0)
+    #     # if "FloorLampFactory" in name:
+    #     #     a = 1
+    #     if "wardrobe" in name:
+    #         import pdb
+    #     # gradient = centroid_a - centroid_b_mean
     #     gradient_norm = np.linalg.norm(gradient)
-    #     gradient = gradient / gradient_norm
+    #     if len(b_names) == 0 or gradient_norm == 0:
+    #         gradient = np.zeros(3)
+    #     else:
+    #         gradient = gradient / gradient_norm
     #     TRANS_MULT = 0.05
     #     translation = TRANS_MULT * obj_state.dof_matrix_translation @ gradient
-
+    #     if "SingleCabinet" in name:
+    #         import pdb
+    #         print(state.objs[name].obj.location)
     #     return translation
 
 

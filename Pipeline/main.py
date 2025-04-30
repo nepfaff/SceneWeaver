@@ -7,8 +7,8 @@ import os
 def main():
     agent = SceneDesigner()
     try:
-        # prompt = "Design me a gym."
         prompt = "Design me a bedroom."
+        # prompt = "Design me a bedroom."
         save_dir = "/mnt/fillipo/yandan/scenesage/record_scene/manus/"+prompt.replace(" ","_").replace(".","").replace(",","_").replace("[","").replace("]","")
         if not os.path.exists(save_dir):
             os.system(f"mkdir {save_dir}")

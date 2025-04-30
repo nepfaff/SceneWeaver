@@ -1,7 +1,8 @@
 import json
 import os
 import time
-
+import sys
+sys.path.append("/home/yandan/workspace/infinigen/Pipeline")
 from gpt import GPT4
 from PIL import Image
 
@@ -82,7 +83,8 @@ def has_front(gpt, category,verbose=False):
         + "1. The front view is often characterized by the most significant or most visible face of the object.\n"
         + "2. For objects like cabinets, the front view is typically where the doors and drawers are visible. For chairs, the front view may show the seat and backrest. For other objects, consider the main or most notable side visible from the viewer's point of view.\n"
         + "3. The front view is usually the view where the object faces the camera directly or is oriented in such a way that the most prominent features (such as a face, label, or handle) are visible.\n"
-        + "4. Some objects might not have standard front view, such as a bottle, since it looks similar from different angle (front, left, right, and back).\n"
+        + "4. A trick is that the front view is more likely to be symmetric.\n"
+        + "5. Some objects might not have standard front view, such as a bottle, since it looks similar from different angle (front, left, right, and back).\n"
         + "Return True if the object usually has a front view, such as desk, transh can, picture, curtain, and monitor. Return False if the object has no front view, such as plant, box, lamp, and object. \n"
         + "Example output:True"
     )
@@ -172,4 +174,4 @@ def get_scene_frontview(scene_name,verbose=False):
 
 
 if __name__ == "__main__":
-    get_scene_frontview("scene0292_00")
+    get_scene_frontview("scene0157_00")

@@ -6,7 +6,7 @@
 
 import random
 import bpy
-from GPT.constants import OBJATHOR_ASSETS_DIR
+# from GPT.constants import OBJATHOR_ASSETS_DIR
 from infinigen.assets.utils.object import join_objects, new_bbox, origin2lowest
 from infinigen.core.placement.factory import AssetFactory
 

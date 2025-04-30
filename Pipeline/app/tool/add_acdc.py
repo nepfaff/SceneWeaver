@@ -18,10 +18,14 @@ from app.prompt.acdc_cand import system_prompt,user_prompt
 DESCRIPTION="""
 Using image generation and 3D reconstruction to add additional objects into the current scene.
 
-Use Case 1: Add a group of small objects on the top of an empty and large furniture, such as a table, cabinet, and desk with nothing on its top. 
+Use Case 1: Add **a group of** small objects on the top of an empty and large furniture, such as a table, cabinet, and desk when there is nothing on its top. 
 
-Strengths: Excellent for adding a group of objects with inter-relations on the top of a large furniture.(e.g., enriching a tabletop), such as adding (laptop,mouse,keyboard) set on the desk and (plate,spoon,food) set on the dining table. Accurate in rotation. 
-Weaknesses: Can not add objects on the wall, ground, or ceiling. Can not add objects inside a container, such as objects in the shelf. Can not add objects when there is already something on the top.
+Do not add objects where there is no available space or there already exists small objects.
+You **MUST** not add small objects on the tall furniture, such as wardrob.
+Do not add small objects on small supporting surface, such as nightstand.
+
+Strengths: Real. Excellent for adding a group of objects with inter-relations on the top of a large furniture.(e.g., enriching a tabletop), such as adding (laptop,mouse,keyboard) set on the desk and (plate,spoon,food) set on the dining table. Accurate in rotation. 
+Weaknesses: Can not add objects on the wall, ground, or ceiling. Can not add objectsinside a container, such as objects in the shelf. Can not add objects when there is already something on the top.
 
 """
 
@@ -91,7 +95,7 @@ class AddAcdcExecute(BaseTool):
                 last_json_name = json_name
 
                 update_infinigen(
-                    action, iter, json_name, description=obj_id, inplace=inplace
+                    action, iter, json_name, description=obj_id, inplace=inplace,ideas=ideas
                 )
                 inplace = True
 
@@ -134,8 +138,8 @@ def gen_img_SD(SD_prompt, obj_id, obj_size):
     # objtype = obj_id.split("_")[1:]
     # objtype = "_".join(objtype)
     # SD_prompt = gen_SD_prompt(prompt,objtype,obj_size)
-    save_dir = os.get_env(save_dir)
-    img_filename = "{save_dir}/pipeline/SD_img.jpg"
+    save_dir = os.getenv("save_dir")
+    img_filename = f"{save_dir}/pipeline/SD_img.jpg"
     j = {"prompt": SD_prompt, "img_savedir": img_filename}
     with open("/home/yandan/workspace/sd3.5/prompt.json", "w") as f:
         json.dump(j, f, indent=4)
@@ -147,7 +151,7 @@ def gen_img_SD(SD_prompt, obj_id, obj_size):
 
 def gen_ACDC_cand(user_demand,ideas,roomtype,iter):
     save_dir = os.getenv("save_dir")
-    with open(f"{save_dir}/pipeline/layout_{iter-1}.json", "r") as f:
+    with open(f"{save_dir}/record_scene/layout_{iter-1}.json", "r") as f:
         layout = json.load(f)
     layout = layout["objects"]
 

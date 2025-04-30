@@ -30,7 +30,7 @@ from infinigen.core.util import blender as butil
 # import fcl
 from infinigen_examples.util.visible import invisible_others, visible_others
 from infinigen.core.tags import Subpart
-
+from shapely.geometry import Polygon, MultiPolygon
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,17 @@ def is_vertically_contained(poly_a, poly_b, return_diff=False):
     Returns:
     bool: True if A is vertically contained within B.
     """
-    y_coords_a = [point[1] for point in poly_a.exterior.coords]
+
+    if isinstance(poly_a, Polygon):
+        y_coords_a = [point[1] for point in poly_a.exterior.coords]
+    elif isinstance(poly_a, MultiPolygon):
+        # Choose the largest polygon inside the MultiPolygon
+        largest = max(poly_a.geoms, key=lambda p: p.area)
+        y_coords_a = [point[1] for point in largest.exterior.coords]
+    else:
+        raise TypeError(f"Unsupported geometry type: {type(poly_a)}")
+
+    # y_coords_a = [point[1] for point in poly_a.exterior.coords]
     y_coords_b = [point[1] for point in poly_b.exterior.coords]
 
     # Check vertical containment along the Y-axis
@@ -103,6 +113,7 @@ def  stable_against(
     allow_overhangs=False,
     use_initial = False
 ):
+
     # 这个函数stable_against主要用于检查两个对象在三维空间中的稳定性。
     # 首先，它获取相关的对象和它们的平面表示。
     # 然后，函数检查两个对象的法向量是否平行，以确保它们是稳定的。
@@ -129,7 +140,7 @@ def  stable_against(
     a_blender_obj = state.objs[obj_name].obj
 
     if  Subpart.SupportSurface in relation_state.relation.parent_tags and \
-        relation_state.target_name!='newroom_0-0':  #TODO YYD
+        relation_state.target_name!='newroom_0-0' and hasattr(state.objs[relation_state.target_name],"populate_obj"):  #TODO YYD
         b_blender_obj = bpy.data.objects.get(state.objs[relation_state.target_name].populate_obj)
     else:
         b_blender_obj = state.objs[relation_state.target_name].obj
@@ -156,7 +167,8 @@ def  stable_against(
 
     scene = state.trimesh_scene
     
-    if Subpart.SupportSurface in relation_state.relation.parent_tags and relation_state.target_name!='newroom_0-0': #TODO YYD
+    if Subpart.SupportSurface in relation_state.relation.parent_tags and relation_state.target_name!='newroom_0-0' \
+        and hasattr(state.objs[relation_state.target_name],"populate_obj"): #TODO YYD
         sb_obj = bpy.data.objects.get(state.objs[relation_state.target_name].populate_obj)
     else:
         sb_obj = state.objs[relation_state.target_name].obj
@@ -210,9 +222,11 @@ def  stable_against(
                 move_vectors.append(np.array(move_vector)[None,:]/np.linalg.norm(np.array(move_vector)))
                 
             gradient = np.mean(np.concatenate(move_vectors, axis=0), axis=0)
+            if obj_name=="60910_nightstand":
+                a = 1
             gradient = anti_project_to_3d(gradient,normal_b)
             # gradient = [gradient[0],gradient[1],0]
-            TRANS_MULT = 0.1
+            TRANS_MULT = 0.05
             translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
             iu.translate(state.trimesh_scene, sa.obj.name, translation)
             print(obj_name, bpy.data.objects[sa.obj.name].location)
@@ -264,14 +278,23 @@ def anti_project_to_3d(point_2D,normal_b,origin_b=[0,0,0]):
     # Find two vectors that lie on the plane, perpendicular to the normal vector
     # Using cross products to find perpendicular vectors
     # tangent_1 = np.cross(normal_b, [1, 0, 0]) if normal_b[0] != 0 else np.cross(normal_b, [0, -1, 0])
+    
     if normal_b[1] not in [1,-1]:
         tangent_1 = np.cross(normal_b, [0, -1, 0])
     elif normal_b[1] not in [1,-1]:
         tangent_1 = np.cross(normal_b, [0, 1, 0])
-    # else:
-
+    # # else:
     # tangent_1 = np.cross(normal_b, [1, 0, 0]) if normal_b != [1,0,0] else np.cross(normal_b, [0, -1, 0])
-    tangent_1 = tangent_1 / np.linalg.norm(tangent_1)
+    # tangent_1 = tangent_1 / np.linalg.norm(tangent_1)
+
+    if normal_b[1] not in [1,-1]:
+        # If normal is vertical (aligned with Y-axis), use X and Z
+        tangent_1 = np.array([1, 0, 0], dtype=np.float64)
+    else:
+        # Otherwise, cross with world Y axis
+        tangent_1 = np.cross(normal_b, [0, 1, 0])
+        tangent_1 /= np.linalg.norm(tangent_1)
+    
 
     # Find another tangent vector
     tangent_2 = np.cross(normal_b, tangent_1)

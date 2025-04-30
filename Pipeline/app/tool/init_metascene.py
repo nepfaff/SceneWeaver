@@ -19,10 +19,12 @@ from app.tool.add_relation import add_relation
 DESCRIPTION="""
 Load the most related scene from a Real2Sim indoor scene dataset as the basic scene.
 Ideal for generating foundational layouts for common room types.
-Supported Room Types: living room, dining room, bedroom, bathroom, office, and classroom.
 
-Strengths: Provides a ready-made, realistic layout based on real-world data.
-Weaknesses: Limited room type diversity. Fixed layout, need to modify with other methods to meet user demand.
+Supported Room Types: living room, dining room, bedroom, bathroom, office, and classroom.
+Use Case 1: Create a foundational layout.
+
+Strengths: Provides a ready-made, realistic layout based on real-world data. with rich details.
+Weaknesses: Fixed layout, need to modify with other methods to meet user demand.
 """
 
 
@@ -80,14 +82,14 @@ class InitMetaSceneExecute(BaseTool):
                 }
                 json.dump(info, f, indent=4)
                 
-            success = update_infinigen(action, iter, json_name)
+            success = update_infinigen(action, iter, json_name,ideas=ideas)
             assert success
 
             #add relation
             action = "add_relation"
             json_name = add_relation(user_demand, ideas, iter, roomtype)
             success = update_infinigen(
-                action, iter, json_name, inplace=True, invisible=True
+                action, iter, json_name, inplace=True, invisible=True,ideas=ideas
             )
             assert success
 
@@ -117,6 +119,8 @@ class InitMetaSceneExecute(BaseTool):
             for scene_id in scene_ids:
                 try:
                     scene_type = scenes[scene_id]["roomtype"]
+                    if len(scene_type)>1:
+                        continue
                     for info in scene_type:
                         if roomtype in info["predicted"] and info["confidence"] > 0.8:
                             scene_id_cands.append(scene_id)

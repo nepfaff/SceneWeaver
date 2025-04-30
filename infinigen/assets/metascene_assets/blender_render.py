@@ -25,6 +25,7 @@ def set_origin(imported_obj):
     imported_obj.location.y -= mean_y
 
     pos_bias = [mean_x, mean_y, min_z]
+    bpy.context.scene.cursor.location = [0,0,0]
 
     bpy.ops.object.origin_set(type="ORIGIN_CURSOR", center="BOUNDS")
     return imported_obj, pos_bias
@@ -400,7 +401,7 @@ def load_glb(mesh_path):
 if __name__ == "__main__":
     basedir = "/mnt/fillipo/huangyue/recon_sim/7_anno_v4/export_stage2_sm"
     for scene_name in os.listdir(basedir):
-        # scene_name = "scene0292_00"
+        scene_name = "scene0157_00"
         scene_path = f"{basedir}/{scene_name}"
 
         outdir = f"/mnt/fillipo/yandan/metascene/export_stage2_sm/{scene_name}"
@@ -430,4 +431,4 @@ if __name__ == "__main__":
                     os.mkdir(save_dir)
                 render_90degree(imported_obj, save_dir)
 
-        # break
+        break

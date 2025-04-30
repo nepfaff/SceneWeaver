@@ -71,7 +71,7 @@ def domain_contains(dom: r.Domain, state: state_def.State, obj: state_def.Object
 def objkeys_in_dom(dom: r.Domain, curr: state_def.State):
     lst = []
     for k, o in curr.objs.items():
-        if k == "6940982_TableDiningFactory":
+        if k == "152094_RackFactory":
             a = 1
         a = domain_contains(dom, curr, o)
         b = o.active

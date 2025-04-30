@@ -74,12 +74,21 @@ from infinigen_examples.util.generate_indoors_util import (
     place_cam_overhead,
     restrict_solving,
 )
-from infinigen_examples.util.visible import invisible_others, visible_others
+from infinigen_examples.util.visible import invisible_others, visible_others,invisible_wall
+from infinigen.core.constraints.example_solver.geometry.validity import all_relations_valid
+from infinigen.core.constraints.constraint_language.util import delete_obj
 
 logger = logging.getLogger(__name__)
 
 all_vars = [cu.variable_room, cu.variable_obj]
-
+def view_all():
+    if not bpy.app.background:
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        override = {'area': area, 'region': region}
+                        bpy.ops.view3d.view_all(override, center=True)
 
 @gin.configurable
 def compose_indoors(
@@ -94,6 +103,7 @@ def compose_indoors(
 ):
     height = 1
 
+  
     consgraph = home_constraints()
     stages = basic_scene.default_greedy_stages()
     checks.check_all(consgraph, stages, all_vars)
@@ -118,6 +128,7 @@ def compose_indoors(
         camera_rigs, solved_rooms, house_bbox, solved_bbox = camera.animate_camera(
             state, stages, limits, solver, p
         )
+        view_all()
 
         if action== "init_physcene":
             state, solver = init_graph.init_physcene(
@@ -138,12 +149,22 @@ def compose_indoors(
             load_iter = iter
             os.system(f"cp {save_dir}/record_scene/render_{iter}_marked.jpg {save_dir}/record_scene/render_{iter}_marked_inplaced.jpg")
             os.system(f"cp {save_dir}/record_scene/render_{iter}.jpg {save_dir}/record_scene/render_{iter}_inplaced.jpg")
+            os.system(f"cp {save_dir}/record_files/metric_{iter}.json {save_dir}/record_files/metric_{iter}_inplaced.json")
+            os.system(f"cp {save_dir}/record_files/scene_{iter}.blend {save_dir}/record_files/scene_{iter}_inplaced.blend")
+            os.system(f"cp {save_dir}/record_files/env_{iter}.pkl {save_dir}/record_files/env_{iter}_inplaced.pkl")
+            os.system(f"cp {save_dir}/record_files/house_bbox_{iter}.pkl {save_dir}/record_files/house_bbox_{iter}_inplaced.pkl")
+            os.system(f"cp {save_dir}/record_files/p_{iter}.pkl {save_dir}/record_files/p_{iter}_inplaced.pkl")
+            os.system(f"cp {save_dir}/record_files/solved_bbox_{iter}.pkl {save_dir}/record_files/solved_bbox_{iter}_inplaced.pkl")
+            os.system(f"cp {save_dir}/record_files/solver_{iter}.pkl {save_dir}/record_files/solver_{iter}_inplaced.pkl")
+            os.system(f"cp {save_dir}/record_files/state_{iter}.pkl {save_dir}/record_files/state_{iter}_inplaced.pkl")
+            os.system(f"cp {save_dir}/record_files/terrain_{iter}.pkl {save_dir}/record_files/terrain_{iter}_inplaced.pkl")
         else:
             load_iter = iter - 1
         p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
         state, solver, terrain, house_bbox, solved_bbox, _ = record.load_scene(
             load_iter
         )
+        view_all()
         save_path = "debug1.blend"
         bpy.ops.wm.save_as_mainfile(filepath=save_path)
         camera_rigs = [bpy.data.objects.get("CameraRigs/0")]
@@ -161,10 +182,12 @@ def compose_indoors(
             #     state, solver = solve_objects.solve_large_and_medium_object(
             #         stages, limits, solver, state, p, consgraph, overrides
             #     )
-        elif action=="solve_small":
-            state, solver = solve_objects.solve_small_object(
-                stages, limits, solver, state, p, consgraph, overrides
-            )
+        # elif action=="solve_small":
+        #     state, solver = solve_objects.solve_small_object(
+        #         stages, limits, solver, state, p, consgraph, overrides
+        #     )
+        elif action=="remove_object":
+            state = update_graph.remove_object(solver, state, p)
         elif action=="add_gpt":
             state, solver = update_graph.add_gpt(stages, limits, solver, state, p)
         elif action=="add_acdc":
@@ -183,6 +206,8 @@ def compose_indoors(
         #     state, solver = update_graph.modify(stages, limits, solver, p)
         elif action=="finalize_scene":
             solved_rooms = [bpy.data.objects["newroom_0-0"]]
+            
+  
             height = complete_structure.finalize_scene(
                 overrides,
                 stages,
@@ -195,17 +220,39 @@ def compose_indoors(
                 house_bbox,
                 camera_rigs,
             )
+            invisible_wall()
         else:
             raise ValueError(f"Action is wrong: {action}")
 
-    if action not in ["init_physcene","init_metascene"]:
-        solver.del_no_relation_objects()
-        state, solver = solve_objects.solve_large_object(
-            stages, limits, solver, state, p, consgraph, overrides
-        )
+  
+    # save_pah = "debug2.blend"
+    # bpy.ops.twm.save_as_mainfile(filepath=save_path)
 
-    save_path = "debug.blend"
-    bpy.ops.wm.save_as_mainfile(filepath=save_path)
+    if action not in ["init_physcene","init_metascene"]:
+        max_key = "start"
+        p.run_stage(
+            "populate_assets",
+            populate.populate_state_placeholders_mid,
+            state,
+            use_chance=False,
+        )
+        while(max_key is not None):
+            state, solver = solve_objects.solve_large_object(
+                stages, limits, solver, state, p, consgraph, overrides
+            )
+            # for name in list(state.objs.keys())[::-1]:
+            #     if name in state.objs.keys():
+            #         if name != "newroom_0-0":
+            #             if not all_relations_valid(state, name, use_initial=True):
+            #                 print("all_relations_valid not valid ", name)
+            #                 objname = state.objs[name].obj.name
+            #                 delete_obj(state.trimesh_scene,objname,delete_blender=True, delete_asset=True)
+            #                 state.objs.pop(name)
+
+            solver.del_no_relation_objects()
+
+            max_key = evaluate.del_top_collide_obj(state,iter)
+            solver.del_no_relation_objects()
 
     # state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
     # state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
@@ -213,10 +260,12 @@ def compose_indoors(
         state, solver, terrain, house_bbox, solved_bbox, camera_rigs, iter, p
     )
 
-    evaluate.eval_metric(state,iter)
+    evaluate.eval_metric(state,iter,remove_bad=True)
 
     record_success()
 
+    save_path = "debug.blend"
+    bpy.ops.wm.save_as_mainfile(filepath=save_path)
     return {
         "height_offset": height,
         "whole_bbox": house_bbox,
@@ -334,11 +383,13 @@ if __name__ == "__main__":
         j = json.load(f)
         save_dir = j["save_dir"]
         os.environ["save_dir"] = save_dir
-
+  
     if not os.path.exists(f"{save_dir}/args"):
         os.system(f"mkdir {save_dir}/args")
         os.system(f"mkdir {save_dir}/record_files")
         os.system(f"mkdir {save_dir}/record_scene")
+    if args.inplace:
+        os.system(f"cp {save_dir}/args/args_{iter}.json {save_dir}/args/args_{iter}_inplaced.json")
     os.system(f"cp args.json {save_dir}/args/args_{args.iter}.json")
-
+  
     main(args)

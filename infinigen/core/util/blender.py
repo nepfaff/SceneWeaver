@@ -290,12 +290,33 @@ def select(objs: bpy.types.Object | list[bpy.types.Object]):
         o.select_set(True)
 
 
+def get_obj_children(obj):
+    if not obj:
+        print(f"Object '{obj.name}' not found.")
+        return
+
+    # 收集所有子对象（递归）
+    def get_all_children(o):
+        children = []
+        for child in o.children:
+            if child.type!="EMPTY":
+                a = 1
+            children.append(child)
+            children.extend(get_all_children(child))
+        return children
+
+    all_objs = get_all_children(obj)
+    all_objs.append(obj)  # 最后也删除自己
+
+    return all_objs
+    
 def delete(objs: bpy.types.Object | list[bpy.types.Object]):
     if not isinstance(objs, list):
         objs = [objs]
     select_none()
     for obj in objs:
-        select(obj)
+        obj_children = get_obj_children(obj)
+        select(obj_children)
         is_mesh = obj.type == "MESH"
         if is_mesh:
             mesh = obj.data

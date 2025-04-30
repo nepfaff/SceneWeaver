@@ -14,7 +14,8 @@ You are working in a 3D scene environment with the following conventions:
 
 - Right-handed coordinate system.
 - The X-Y plane is the floor.
-- X axis (red) points right, Y axis (green) points forward, Z axis (blue) points up.
+- X axis (red) points right, Y axis (green) points top, Z axis (blue) points up.
+- For the location [x,y,z], x,y means the location of object's center in x- and y-axis, z means the location of the object's bottom in z-axis.
 - All asset local origins are centered in X-Y and at the bottom in Z.
 - By default, assets face the +X direction.
 - A rotation of [0, 0, 1.57] in Euler angles will turn the object to face +Y.
@@ -28,7 +29,7 @@ You need to return a dict including:
 You can refer but not limited to this category list: ['BeverageFridcge', 'Dishwasher', 'Microwave', 'Oven', 'Monitor', 'TV', 'BathroomSink', 'StandingSink', 'Bathtub', 'Hardware', 'Toilet', 'AquariumTank', 'DoorCasing', 'GlassPanelDoor', 'LiteDoor', 'LouverDoor', 'PanelDoor', 'NatureShelfTrinkets', 'Pillar', 'elements.RugFactory', 'CantileverStaircase', 'CurvedStaircase', 'LShapedStaircase', 'SpiralStaircase', 'StraightStaircase', 'UShapedStaircase', 'Pallet', 'Rack',  'DeskLamp', 'FloorLamp', 'Lamp', 'Bed', 'BedFrame', 'BarChair', 'Chair', 'OfficeChair', 'Mattress', 'Pillow', 'ArmChair', 'Sofa', 'CellShelf', 'TVStand', 'Countertop', 'KitchenCabinet', 'KitchenIsland', 'KitchenSpace', 'LargeShelf', 'SimpleBookcase', 'SidetableDesk', 'SimpleDesk', 'SingleCabinet', 'TriangleShelf', 'BookColumn', 'BookStack', 'Sink', 'Tap', 'Vase', 'TableCocktail', 'CoffeeTable', 'SideTable', 'TableDining', 'TableTop', 'Bottle', 'Bowl', 'Can', 'Chopsticks', 'Cup', 'FoodBag', 'FoodBox', 'Fork', 'Spatula', 'FruitContainer', 'Jar', 'Knife', 'Lid', 'Pan', 'LargePlantContainer', 'PlantContainer', 'Plate', 'Pot', 'Spoon', 'Wineglass', 'Balloon', 'RangeHood', 'Mirror', 'WallArt', 'WallShelf']
     Do not add wall decorations or objects on the wall. If the user demand includes this object, filter it out.
     Do not use quota in name, such as baby's or teacher's.
-    Do not add too many objects to make the scenen crowded.
+    Do not add too many objects to make the scene crowded.
 2. An object list that stand with back against the wall, marked as "category_against_wall".
 3. Relation between different categories when they have a subordinate relationship, marked as "Relation".
     The former object must be the newly added object and belong to the latter object, such as chair and table, nightstand and bed. 
@@ -40,13 +41,13 @@ You can refer but not limited to this category list: ['BeverageFridcge', 'Dishwa
     (3) Related old object that each new object belongs to or has relation with.
 
 The optional relation is : 
-1.front_against: obj1's front faces to obj2, and stand very close (less than 5 cm).
-2.front_to_front: obj1's front faces to obj2's front, and stand very close (less than 5 cm).
-3.leftright_leftright: obj1's left or right faces to obj2's left or right, and stand very close (less than 5 cm). 
+1.front_against: obj1's front faces to obj2, and stand very close (less than 5 cm). Such as chair and table.
+2.front_to_front: obj1's front faces to obj2's front, and stand very close (less than 5 cm). Such as chair and desk.
+3.leftright_leftright: obj1's left or right faces to obj2's left or right, and stand very close (less than 5 cm). Such as side_table and sofa.
 4.side_by_side: obj1's side(left, right , or front) faces to obj2's side(left, right , or front), and stand very close (less than 5 cm).
 5.back_to_back: obj1's back faces to obj2's back, and stand very close (less than 5 cm).
-6.ontop: obj1 is placed on the top of obj2.
-7.on: obj1 is placed inside obj2.
+6.ontop: obj1 is placed on the top of obj2. Such as book and nightstand.
+7.on: obj1 is placed inside obj2. Such as book and shelf. **Note**: The obj2 in this relationship must be previously existed object. You can not place a new object inside another new object.
 
 Failure case of relation:
 1.[table, table, side_by_side]: The relation between the same category is wrong. You only focus on relation between 2 different categories.
@@ -54,6 +55,7 @@ Failure case of relation:
 3.[wardrobe, bed, front_against]: Wardrobe has no subordinate relationship with bed. And they need to keep a long distance to make wardrobe accessable
 4.[chair, table, side_by_side],[chair, bed, front_against]: Each category, such as chair can only have one relationship. 2 relations will cause failure.
 5.[book, shelf, ontop]: Small objects can not be placed on the top of shelf. They can only be placed inside the shelf (which is "on" in the relation), so [book, shelf, on] is okay.
+6.[desk, chair, front_to_front]: Child_obj is usually smaller than parent_obj, or child_obj belongs to parent_obj. The chair usually belongs to table, so it should be [chair, desk, front_to_front].
 
 Here is the example: 
 {
@@ -61,11 +63,11 @@ Here is the example:
     "Roomsize": [3, 4],
     "Number of new furniture": {"book":"2", "bench":"1"},
     "category_against_wall": [],
-    "Relation": [["book", "nightstand", "ontop"], ["bench", "bed", "front_to_front"]],
+    "Relation": [["book", "nightstand", "on"], ["book", "bench", "ontop"], ["bench", "bed", "front_to_front"]],
     "Placement": {
         "bench": {"1": {"position": [2.25,1.5], "rotation": 180, "size": [0.5,2,0.5], "parent":["3124134_bed","front_to_front"]}},
         "book": {"1": {"position": [0.2,0.1, 0.4], "size": [0.15,0.2,0.04], "rotation": 90, "parent":["2343214_nightstand", "on"]}, 
-                "2": {"position": [0.2,2.7,0.2], "size": [0.12,0.18,0.03], "rotation": 0, "parent":["bench","1","on"]}},
+                "2": {"position": [0.2,2.7,0.2], "size": [0.12,0.18,0.03], "rotation": 0, "parent":["bench","1","ontop"]}},
     }
 }
 

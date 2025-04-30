@@ -167,6 +167,7 @@ def populate_state_placeholders_mid(
     # 如果 final 参数为 True，执行以下操作
     targets = []  # 用于存放待处理的目标对象
     # 遍历状态中的所有对象
+    
     for objkey, os in state.objs.items():
         # 如果对象没有生成器，则跳过
         if os.generator is None:
@@ -190,6 +191,11 @@ def populate_state_placeholders_mid(
     update_state_mesh_objs = []  # 用于存放需要更新的网格对象信息
     # 遍历目标对象，执行生成和处理
     for i, objkey in enumerate(targets):
+        
+        if objkey=="6465442_bookshelf":
+            import pdb
+        #     print("aaaaaaaaaaa")
+            # pdb.set_trace()
         os = state.objs[objkey]
         placeholder = os.obj  # 获取占位符对象
         # if any(obj.name == placeholder.name.replace("bbox_placeholder","spawn_asset") for obj in unique_assets.objects):
@@ -209,7 +215,7 @@ def populate_state_placeholders_mid(
         if any(obj.name == populate_obj_name for obj in unique_assets.objects):
             obj = unique_assets.objects[populate_obj_name]
             obj.location = placeholder.location
-            obj.rotation_euler = placeholder.rotation_euler
+            obj.rotation_mode = 'XYZ'
             obj.rotation_euler = placeholder.rotation_euler
 
             scale_x = placeholder.dimensions[0] / obj.dimensions[0]
@@ -220,7 +226,7 @@ def populate_state_placeholders_mid(
             obj.select_set(True)  # Select the object
             bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
         else:
-            if inst_seed == "8946473":
+            if inst_seed == "9128922":
                 a = 1
             obj = os.generator.spawn_asset(  # TODO
                 i=int(inst_seed),
@@ -228,6 +234,9 @@ def populate_state_placeholders_mid(
                 loc=placeholder.location,  # we could use placeholder=pholder here, but I worry pholder may have been modified
                 rot=placeholder.rotation_euler,  # MARK
             )
+            # aa = bpy.data.objects.get("ObjaverseCategoryFactory(5444696).spawn_asset(3340520)")
+            # if aa is not None:
+            #     print(aa.rotation_euler)
             placeholder.name = old_objname
             # # 使用生成器生成新的对象，并设置位置、旋转等属性
             # os.obj = os.generator.spawn_asset(
@@ -246,7 +255,7 @@ def populate_state_placeholders_mid(
             butil.put_in_collection(
                 obj, unique_assets
             )  # 将生成的对象放入唯一资产集合中
-
+        bpy.context.view_layer.update()
         # 查找可能存在的切割器（cutter），如果找到则应用切割操作
         cutter = next(
             (o for o in butil.iter_object_tree(obj) if o.name.endswith(".cutter")),
@@ -263,7 +272,7 @@ def populate_state_placeholders_mid(
             )
             update_state_mesh_objs += cut_objs  # 更新网格对象列表
         state.objs[objkey].populate_obj = obj.name
-
+    
     unique_assets.hide_viewport = False  # 恢复显示资产集合的视图
     # 如果是最终的处理，则返回
     if final:
