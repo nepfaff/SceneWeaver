@@ -283,8 +283,11 @@ def setup_camera(margin=1.05, resolution=720):
 
 # === 4. 创建旋转轴空对象 ===
 def setup_rotation_anchor():
-    anchor = bpy.data.objects.new("RotationAnchor", None)
-    bpy.context.collection.objects.link(anchor)
+    try: 
+        anchor = bpy.data.objects.get("RotationAnchor")
+    except:
+        anchor = bpy.data.objects.new("RotationAnchor", None)
+        bpy.context.collection.objects.link(anchor)
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -363,7 +366,7 @@ if __name__ == "__main__":
     bpy.context.scene.render.engine = "CYCLES"  #'CYCLES' #'BLENDER_EEVEE_NEXT'
     # print("Current render engine:", bpy.context.scene.render.engine)
     render_views(
-        anchor, anles_deg=range(0, 360, 90), output_dir=roomdir, render_type="cycle"
+        anchor, angles_deg=range(0, 360, 90), output_dir=roomdir, render_type="cycle"
     )
     # rotate_scene(anchor, angle=270)
 

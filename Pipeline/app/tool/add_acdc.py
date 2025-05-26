@@ -48,11 +48,13 @@ class AddAcdcExecute(BaseTool):
     }
 
     def execute(self, ideas: str) -> str:
+        #1 generate prompt for sd + 2 use sd to generate image + 3 use acdc to reconstruct 3D scene
         user_demand = os.getenv("UserDemand")
         iter = int(os.getenv("iter"))
         roomtype = os.getenv("roomtype")
         action = self.name
         try:
+            #1 generate prompt for sd 
             steps = gen_ACDC_cand(user_demand, ideas, roomtype, iter)
 
             inplace = False
@@ -67,11 +69,12 @@ class AddAcdcExecute(BaseTool):
                     while True and cnt < 5:
                         cnt += 1
                         print(sd_prompt)
+                        # 2 use sd to generate image 
                         img_filename = gen_img_SD(
                             sd_prompt, obj_id, info["obj_size"]
                         )  # execute until satisfy the requirement
-                        # img_filename = '/home/yandan/workspace/infinigen/Pipeline/record/SD_img.jpg'
 
+                        #3 use acdc to reconstruct 3D scene
                         _ = acdc(img_filename, obj_id, info["obj category"])
 
                         with open(
@@ -81,7 +84,6 @@ class AddAcdcExecute(BaseTool):
                             if j["success"]:
                                 save_dir = os.getenv("save_dir")
                                 newid = obj_id.replace(" ","_")
-                                # json_name = f"{save_dir}/pipeline/acdc_output/step_3_output/scene_0/scene_0_info.json"
                                 foldername_old = f"{save_dir}/pipeline/acdc_output/step_3_output/scene_0/"
                                 foldername_new = f"{save_dir}/pipeline/{newid}"
                                 os.system(f"cp -r {foldername_old} {foldername_new}")

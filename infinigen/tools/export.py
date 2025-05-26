@@ -65,8 +65,10 @@ def remove_shade_smooth(obj):
             smooth_node = geo_group.nodes["Set Shade Smooth"]
         else:
             continue
-
-        link = smooth_node.inputs[0].links[0]
+        try: 
+            link = smooth_node.inputs[0].links[0]
+        except:
+            continue
         from_socket = link.from_socket
         geo_group.links.remove(link)
         geo_group.links.new(outputNode.inputs[0], from_socket)
@@ -520,7 +522,11 @@ def bake_metal(
         nodes = mat.node_tree.nodes
         outputNode = nodes["Material Output"]
         principled_bsdf_node = nodes["Principled BSDF"]
-        links.remove(outputNode.inputs[0].links[0])
+        try:
+            links.remove(outputNode.inputs[0].links[0])
+        except:
+            print(f"error removing {outputNode.inputs[0].links[0]}" )
+            continue
         links.new(outputNode.inputs[0], principled_bsdf_node.outputs[0])
 
 

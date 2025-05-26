@@ -217,6 +217,8 @@ def find_given_assignments(
             assignments=assignments,
         )
         return
+    if hasattr(rel,"parent_tags"):
+        return
 
     for parent_candidate_name in candidates:  # 遍历候选对象
         if parent_candidate_name != "newroom_0-0":

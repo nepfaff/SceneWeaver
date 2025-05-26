@@ -21,8 +21,8 @@ To solve the problem, list all the appropriate tools that can match the requirem
 1. You should consider the suggestion from previous conversation to score each tool. 
 2. If the same problem has not been solved by last step, you should consider degrade the score of the tool in the last step.  
 3. You should carefully check current scene, and you **MUST** obey the relation of each object. If there is no previous step, init the scene.
-3. For complex tasks, you can break down the problem and use different tools step by step to solve it, but you only choose and execute the suitable tool for this step. 
-4. When multiple tools are applicable to solve the user’s request, list them with confidence score. 
+4. For complex tasks, you can break down the problem and use different tools step by step to solve it, but you only choose and execute the suitable tool for this step. 
+5. When multiple tools are applicable to solve the user’s request, list them with confidence score. 
 
 You must choose one tool for this step.
 Clearly explain the expectation and suggest the next steps.

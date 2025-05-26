@@ -283,26 +283,27 @@ def setup_camera(margin=1.05, resolution=720):
 
 
 def update_camera(margin=1.05, resolution=720):
-import bpy
-resolution = 2048
+    import bpy
+    resolution = 2048
 
-bpy.context.scene.render.resolution_x = resolution
-bpy.context.scene.render.resolution_y = resolution
-bpy.context.scene.render.resolution_percentage = 100
+    bpy.context.scene.render.resolution_x = resolution
+    bpy.context.scene.render.resolution_y = resolution
+    bpy.context.scene.render.resolution_percentage = 100
 
-cam = bpy.data.objects.get("Camera")
-if not cam:
-    cam_data = bpy.data.cameras.new("Camera")
-    cam = bpy.data.objects.new("Camera", cam_data)
-    bpy.context.collection.objects.link(cam)
+    cam = bpy.data.objects.get("Camera")
+    if not cam:
+        cam_data = bpy.data.cameras.new("Camera")
+        cam = bpy.data.objects.new("Camera", cam_data)
+        bpy.context.collection.objects.link(cam)
 
-bpy.context.scene.camera = cam
+    bpy.context.scene.camera = cam
 
 
 # === 4. 创建旋转轴空对象 ===
 def setup_rotation_anchor():
     try: 
         anchor = bpy.data.objects.get("RotationAnchor")
+        assert anchor is not None
     except:
         anchor = bpy.data.objects.new("RotationAnchor", None)
         bpy.context.collection.objects.link(anchor)
@@ -312,6 +313,7 @@ def setup_rotation_anchor():
             obj.parent = anchor
 
     return anchor
+
 
 #  # === 5. 渲染不同角度的视图（30度） ===
 # def render_views(anchor, angles_deg, output_dir):
@@ -355,29 +357,51 @@ def rotate_scene(anchor, angle):
 
 
 if __name__ == "__main__":
-    import sys
-    #    roomdir = "/mnt/fillipo/yandan/scenesage/record_scene/layoutgpt/restaurant/restaurant_2/"
-    # outdir = "/mnt/fillipo/yandan/scenesage/record_scene/holodeck/"
-    # roomtypes = os.listdir(outdir)
-    # for roomtype in roomtypes:
-    #     for roomname in os.listdir(f"{outdir}/{roomtype}/"):
-    # roomdir = f"{outdir}/{roomtype}/{roomname}"
-    # roomdir = "/mnt/fillipo/yandan/scenesage/record_scene/holodeck//waitingroom/waitingroom_0"
-    # blendfile = f"{roomdir}/record_files/scene_0.blend"
-    # blendfile = '/mnt/fillipo/yandan/scenesage/record_scene/holodeck//waitingroom/waitingroom_0/record_files/scene_0.blend'
 
-    # if os.path.exists(blendfile):
-    #     bpy.ops.wm.open_mainfile(filepath=blendfile, load_ui=False, use_scripts=False)
 
-    delete_collections_and_objects_by_name_keywords(["wall", "window", "placeholder", "bbox","ceiling"])
     add_light(strength=20)
     add_wall()
     center_scene()
     setup_camera(resolution=2048)
     anchor = setup_rotation_anchor()
     bpy.context.scene.render.engine = "CYCLES"  #'CYCLES' #'BLENDER_EEVEE_NEXT'
-    # print("Current render engine:", bpy.context.scene.render.engine)
-    rotate_scene(anchor, angle=0)
 
-    # ~/software/blender-4.2.0-linux-x64$ ./blender --background --python /home/yandan/workspace/infinigen/render/render_scene.py
-    # /home/yandan/software/blender-4.2.0-linux-x64/blender /mnt/fillipo/yandan/scenesage/record_scene/holodeck//waitingroom/waitingroom_0/record_files/scene_0.blend --background --python /home/yandan/workspace/infinigen/render/render_scene.py
+
+
+    # Get the active object
+    obj = bpy.data.objects.get("RotationAnchor")
+    # Ensure object is selected and active
+    if obj is None:
+        raise Exception("No active object selected")
+
+    # Set rotation mode to Euler XYZ
+    obj.rotation_mode = 'XYZ'
+
+    # Frame 0: rotation = 0 degrees (0 radians)
+    bpy.context.scene.frame_set(0)
+    obj.rotation_euler[2] = 0  # Z-axis
+    obj.keyframe_insert(data_path="rotation_euler", index=2)
+
+    # Frame 200: rotation = 360 degrees (2π radians)
+    bpy.context.scene.frame_set(200)
+    obj.rotation_euler[2] = 6.28319  # 360 degrees in radians
+    obj.keyframe_insert(data_path="rotation_euler", index=2)
+
+    # Set linear interpolation for the Z-rotation
+    for fcurve in obj.animation_data.action.fcurves:
+        if fcurve.data_path == "rotation_euler" and fcurve.array_index == 2:
+            for keyframe in fcurve.keyframe_points:
+                keyframe.interpolation = 'LINEAR'
+    
+
+
+    # Set frame range
+    bpy.context.scene.frame_start = 0
+    bpy.context.scene.frame_end = 200
+
+    # Set FPS
+    bpy.context.scene.render.fps = 25
+    
+ 
+    bpy.context.scene.render.engine = 'CYCLES'
+    bpy.context.scene.cycles.samples = 1024

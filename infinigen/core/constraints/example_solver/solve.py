@@ -1037,7 +1037,12 @@ class Solver:
                     and instance["parent"] is not None
                     and len(instance["parent"]) > 0
                 ):
-                    parent_type = instance["parent"][0]
+                    if isinstance(instance["parent"][0],str):
+                        parent_type = instance["parent"][0]
+                    elif isinstance(instance["parent"][0],list):
+                         parent_type = instance["parent"][0][0]
+                    else:
+                        AssertionError("order error")
                     if parent_type in graph:
                         graph[parent_type].append(obj_type)
                         in_degree[obj_type] += 1
@@ -1056,7 +1061,10 @@ class Solver:
 
         # Check for cycles (unlikely here)
         if len(ordered) != len(object_types):
-            raise ValueError("Cycle detected in dependencies")
+            # import pdb
+            # pdb.set_trace()
+            # raise ValueError("Cycle detected in dependencies")
+            ordered += [i for i in object_types if i not in ordered]
 
         return ordered
 
@@ -1103,9 +1111,12 @@ class Solver:
                             if this_stage != stage:
                                 continue
                             parent_key, parent_num, relation = value[num]["parent"]
-                            parent_obj_name = self.Placement_big[parent_key][
-                                parent_num
-                            ]["name"]
+                            try:
+                                parent_obj_name = self.Placement_big[parent_key][
+                                    parent_num
+                                ]["name"]
+                            except:
+                                parent_obj_name = None
                         else:
                             this_stage = "large"
                             if this_stage != stage:
@@ -1151,7 +1162,11 @@ class Solver:
                     assign = propose_relations.find_given_assignments(
                         self.state, search_rels, parent_obj_name=parent_obj_name
                     )
-                    assignments = list(assign)[0]
+                    assignments = list(assign)
+                    if len(assignments)==0:
+                        assignments = assignments
+                    else:
+                        assignments = assignments[0]
                     for i in range(2):
                         # for i, assignments in enumerate(assign):
                         found_tags = usage_lookup.usages_of_factory(gen_class)
@@ -1673,17 +1688,24 @@ class Solver:
             and value[num]["parent"] is not None
         ):
             try:
-                parent_key, parent_num, relation = value[num]["parent"]
                 try:
-                    parent_obj_name = self.Placement_big[parent_key][parent_num]["name"]
+                    parent_key, parent_num, relation = value[num]["parent"]
+                    try:
+                        parent_obj_name = self.Placement_big[parent_key][parent_num]["name"]
+                    except:
+                        parent_obj_name = self.Placement[parent_key][parent_num]["name"]
                 except:
-                    parent_obj_name = self.Placement[parent_key][parent_num]["name"]
+                    parent_obj_name, relation = value[num]["parent"]
+                    
+                var_assignments = {
+                    cu.variable_room: "newroom_0-0",
+                    cu.variable_obj: parent_obj_name,
+                }
             except:
-                parent_obj_name, relation = value[num]["parent"]
-            var_assignments = {
-                cu.variable_room: "newroom_0-0",
-                cu.variable_obj: parent_obj_name,
-            }
+                parent_obj_name = None
+                parent_key = None
+                relation = None
+                var_assignments = {cu.variable_room: "newroom_0-0"}
 
         elif parent_obj_name is not None:
             var_assignments = {

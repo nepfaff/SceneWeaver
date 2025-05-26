@@ -60,7 +60,7 @@ class SceneDesigner:
     special_tool_names = Terminate().name
 
     max_observe: int = 10000
-    max_steps: int = 20
+    max_steps: int = 15
     duplicate_threshold: int = 2
 
     # Add general-purpose tools to the tool collection
@@ -181,7 +181,7 @@ class SceneDesigner:
             score_new = sum(score_new)
 
         if iter == 0:
-            if score_new >= 20:
+            if score_new >= 8:
                 return True
             else:
                 return False
@@ -262,6 +262,7 @@ class SceneDesigner:
                     messages = [self.messages[0]] + self.messages[-6:]
                 else:
                     messages = self.messages
+                # messages = self.messages[:2]
                 # Get response with tool options
                 response = self.llm.ask_tool(
                     messages=messages,
