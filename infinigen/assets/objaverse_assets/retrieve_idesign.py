@@ -31,7 +31,7 @@ meta = json.load(
             "objaverse_meta.json",
             token=True,
             repo_type="dataset",
-            local_dir="OpenShape-Embeddings",
+            local_dir="/home/yandan/workspace/IDesign/OpenShape-Embeddings",
         )
     )
 )
@@ -43,7 +43,7 @@ deser = torch.load(
         "objaverse.pt",
         token=True,
         repo_type="dataset",
-        local_dir="OpenShape-Embeddings",
+        local_dir="/home/yandan/workspace/IDesign/OpenShape-Embeddings",
     ),
     map_location="cpu",
 )

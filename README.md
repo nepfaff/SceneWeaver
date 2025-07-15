@@ -31,13 +31,59 @@
 
 For more information, please visit our [**project page**](https://sceneweaver.github.io).
 
+## Available Tools:
 
+Here we adapt the following tools to our framework. You could choose what you want from the following tools or expand the framework to other tools (such as architecture, Text-2-3D)  you need.
+Initializer:
+LLM: GPT
+Dataset: MetaScenes
+Model: PhyScene/DiffuScene/ATISS
+
+Implementer:
+Visual: SD + Digital Cousin
+LLM: GPT
+Rule
+
+Modifier:
+Update Layout/Rotation/Size
+Add Relation
+Remove Objects
 
 ## ⚙️ Installation & Dependencies
-Check [INSTALL.md](INSTALL.md) for installation details.
+Infinigen
+install Infinigen as a Blender Python script:
+```
+git clone https://github.com/princeton-vl/infinigen.git
+cd infinigen
+conda create --name infinigen python=3.11
+conda activate infinigen 
+```
+
+Then, install using one of the options below:
+```
+
+# Minimal installation (recommended setting for use in the Blender UI)
+INFINIGEN_MINIMAL_INSTALL=True bash scripts/install/interactive_blender.sh
+
+# Normal install
+bash scripts/install/interactive_blender.sh
+
+# Enable OpenGL GT
+INFINIGEN_INSTALL_CUSTOMGT=True bash scripts/install/interactive_blender.sh
+```
+More details can refer to [official repo of Infinigen](https://github.com/princeton-vl/infinigen/blob/main/docs/Installation.md#installing-infinigen-as-a-blender-python-script).
+
+
+ACDC
+sd3.5
+IDesign
                                                                                                           
 ## 🛒 Prepare Data                                                 
 You can refer to [DATA.md](DATA.md) to download the original datasets and preprocess the data.
+metascene
+physcene room
+3D future
+holodeck-objaverse
 
 ## 🚀 Diffusion Model for Scene Synthesis
 <!-- ####  Training 
