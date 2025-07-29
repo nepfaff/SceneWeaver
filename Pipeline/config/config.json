@@ -1,0 +1,14 @@
+
+
+{
+    "llm":{
+        "api_type": "azure",
+        "model" : "gpt-4.1-2025-04-14",
+        "base_url": "{YOUR_AZURE_ENDPOINT.rstrip('/')}/openai/deployments/{AZURE_DEPOLYMENT_ID}",
+        "api_key" : "key.txt",
+        "max_tokens": 8096,
+        "temperature": 0.3,
+        "api_version":"2025-03-01-preview"
+    }
+}
+
