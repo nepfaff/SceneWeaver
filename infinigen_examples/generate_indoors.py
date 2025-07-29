@@ -15,7 +15,8 @@ logging.basicConfig(
 )
 import os
 import sys
-
+import pdb
+pdb.set_trace()
 import bpy
 import gin
 
@@ -41,7 +42,66 @@ from infinigen_examples.util.generate_indoors_util import (
 from infinigen_examples.util.visible import (
     invisible_wall,
 )
+# Copyright (C) 2023, Princeton University.
+# This source code is licensed under the BSD 3-Clause license found in the LICENSE file in the root directory
+# of this source tree.
 
+import argparse
+import logging
+from pathlib import Path
+
+# ruff: noqa: E402
+# NOTE: logging config has to be before imports that use logging
+logging.basicConfig(
+    format="[%(asctime)s.%(msecs)03d] [%(module)s] [%(levelname)s] | %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.INFO,
+)
+import json
+import os
+import socket
+import sys
+import threading
+import time
+
+import bpy
+import gin
+import numpy as np
+
+from infinigen.core import execute_tasks, init
+from infinigen.core.constraints import checks
+from infinigen.core.constraints.constraint_language.util import delete_obj_with_children
+from infinigen.core.constraints.example_solver import (
+    populate,
+)
+from infinigen.core.constraints.example_solver.geometry.validity import (
+    all_relations_valid,
+)
+from infinigen.core.constraints.example_solver.room import constants
+from infinigen.core.util import pipeline
+from infinigen_examples.indoor_constraint_examples import home_constraints
+from infinigen_examples.steps import (
+    basic_scene,
+    camera,
+    complete_structure,
+    evaluate,
+    init_graph,
+    light,
+    record,
+    room_structure,
+    solve_objects,
+    update_graph,
+)
+from infinigen_examples.util import constraint_util as cu
+from infinigen_examples.util.generate_indoors_util import (
+    restrict_solving,
+)
+from infinigen_examples.util.visible import (
+    invisible_others,
+    invisible_wall,
+    visible_layers,
+    visible_others,
+)
 logger = logging.getLogger(__name__)
 
 all_vars = [cu.variable_room, cu.variable_obj]
@@ -152,8 +212,15 @@ def compose_indoors(
         )
 
         view_all()
-        save_path = "debug1.blend"
-        bpy.ops.wm.save_as_mainfile(filepath=save_path)
+        # save_path = "debug1.blend"
+        # bpy.ops.wm.save_as_mainfile(filepath=save_path)
+        # from infinigen.core.constraints.evaluator.node_impl.trimesh_geometry import accessibility_cost
+        # import pdb
+        # pdb.set_trace()
+        # lst = [ 'ObjaverseCategoryFactory(8977389).spawn_asset(5348940)', 'ObjaverseCategoryFactory(9726544).spawn_asset(155259)', 'SingleCabinetFactory(4185867).spawn_asset(339423)', 'LargePlantContainerFactory(3315598).spawn_asset(4782290)', 'SimpleBookcaseFactory(7072664).spawn_asset(3590337)', 'ObjaverseCategoryFactory(7452565).spawn_asset(232670)', 'SidetableDeskFactory(7921819).spawn_asset(7806247)', 'BottleFactory(3521636).spawn_asset(4028293)', 'BookStackFactory(5842257).spawn_asset(8922245)', 'BookStackFactory(8331176).spawn_asset(6185393)', 'DeskLampFactory(2449225).spawn_asset(5484490)', 'DeskLampFactory(5484490).spawn_asset(3521636)']
+        # for  i in range(len(lst)):
+        #     cost = accessibility_cost(state.trimesh_scene, lst[i],lst[i+1], visualize=False, fast=True)
+        #     print(cost)
         camera_rigs = [bpy.data.objects.get("CameraRigs/0")]
         if action == "add_relation":
             state, solver = update_graph.add_new_relation(solver, state, p)
@@ -216,88 +283,84 @@ def compose_indoors(
         else:
             raise ValueError(f"Action is wrong: {action}")
 
-    # if "nophy" not in save_dir:
-    #     if action not in [
-    #         "init_physcene",
-    #         "init_metascene",
-    #         "finalize_scene",
-    #         "add_acdc",
-    #     ]:
-    #         p.run_stage(
-    #             "populate_assets",
-    #             populate.populate_state_placeholders_mid,
-    #             state,
-    #             use_chance=False,
-    #         )
-    #         save_path = "debug.blend"
-    #         bpy.ops.wm.save_as_mainfile(filepath=save_path)
-    #         if action == "add_relation":
-    #             state, solver = solve_objects.solve_large_object(
-    #                 stages, limits, solver, state, p, consgraph, overrides
-    #             )
-    #         else:
-    #             stop = False
-    #             while not stop:
-    #                 state, solver = solve_objects.solve_large_object(
-    #                     stages, limits, solver, state, p, consgraph, overrides
-    #                 )
-    #                 save_path = "debug1.blend"
-    #                 bpy.ops.wm.save_as_mainfile(filepath=save_path)
-    #                 for k, objinfo in state.objs.items():
-    #                     if hasattr(objinfo, "populate_obj"):
-    #                         asset_obj = bpy.data.objects.get(objinfo.populate_obj)
-    #                         place_obj = objinfo.obj
-    #                         if not np.allclose(asset_obj.location, place_obj.location):
-    #                             a = 1
-    #                         asset_obj.rotation_mode = "XYZ"
-    #                         place_obj.rotation_mode = "XYZ"
-    #                         if not np.allclose(
-    #                             asset_obj.rotation_euler, place_obj.rotation_euler
-    #                         ):
-    #                             a = 1
-    #                 p.run_stage(
-    #                     "populate_assets",
-    #                     populate.populate_state_placeholders_mid,
-    #                     state,
-    #                     update_trimesh=False,
-    #                     use_chance=False,
-    #                 )
+    if "nophy" not in save_dir:
+        if action not in [
+            "init_physcene",
+            "init_metascene",
+            "finalize_scene",
+            "add_acdc",
+        ]:
+            p.run_stage(
+                "populate_assets",
+                populate.populate_state_placeholders_mid,
+                state,
+                use_chance=False,
+            )
+            if action == "add_relation":
+                state, solver = solve_objects.solve_large_object(
+                    stages, limits, solver, state, p, consgraph, overrides
+                )
+            else:
+                stop = False
+                while not stop:
+                    state, solver = solve_objects.solve_large_object(
+                        stages, limits, solver, state, p, consgraph, overrides
+                    )
+                    for k, objinfo in state.objs.items():
+                        if hasattr(objinfo, "populate_obj"):
+                            asset_obj = bpy.data.objects.get(objinfo.populate_obj)
+                            place_obj = objinfo.obj
+                            if not np.allclose(asset_obj.location, place_obj.location):
+                                a = 1
+                            asset_obj.rotation_mode = "XYZ"
+                            place_obj.rotation_mode = "XYZ"
+                            if not np.allclose(
+                                asset_obj.rotation_euler, place_obj.rotation_euler
+                            ):
+                                a = 1
+                    p.run_stage(
+                        "populate_assets",
+                        populate.populate_state_placeholders_mid,
+                        state,
+                        update_trimesh=False,
+                        use_chance=False,
+                    )
 
-    #                 solver.del_no_relation_objects()
-    #                 # save_path = "debug3.blend"
-    #                 # bpy.ops.twm.save_as_mainfile(filepath=save_path)
-    #                 stop = evaluate.del_top_collide_obj(state, iter)
+                    solver.del_no_relation_objects()
+                    # save_path = "debug3.blend"
+                    # bpy.ops.twm.save_as_mainfile(filepath=save_path)
+                    stop = evaluate.del_top_collide_obj(state, iter)
 
-    #                 solver.del_no_relation_objects()
+                    solver.del_no_relation_objects()
 
-    #                 if not bpy.app.background:
-    #                     invisible_others()
-    #                     bpy.ops.wm.redraw_timer(type="DRAW_WIN_SWAP", iterations=1)
-    #                     visible_others()
+                    if not bpy.app.background:
+                        invisible_others()
+                        bpy.ops.wm.redraw_timer(type="DRAW_WIN_SWAP", iterations=1)
+                        visible_others()
 
-    #             for name in list(state.objs.keys())[::-1]:
-    #                 if name in state.objs.keys():
-    #                     if name != "newroom_0-0":
-    #                         if not all_relations_valid(
-    #                             state, name, use_initial=True, fix_pos=True
-    #                         ):
-    #                             if check_support(state, name, ratio=0.6):
-    #                                 # continue if children object is supported > 60%
-    #                                 continue
-    #                             print("all_relations_valid not valid ", name)
-    #                             objname = state.objs[name].obj.name
-    #                             delete_obj_with_children(
-    #                                 state.trimesh_scene,
-    #                                 objname,
-    #                                 delete_blender=True,
-    #                                 delete_asset=True,
-    #                             )
-    #                             state.objs.pop(name)
-    #                 if not bpy.app.background:
-    #                     invisible_others(hide_placeholder=True)
-    #                     bpy.ops.wm.redraw_timer(type="DRAW_WIN_SWAP", iterations=1)
-    #                     visible_others()
-    #             solver.del_no_relation_objects()
+                for name in list(state.objs.keys())[::-1]:
+                    if name in state.objs.keys():
+                        if name != "newroom_0-0":
+                            if not all_relations_valid(
+                                state, name, use_initial=True, fix_pos=True
+                            ):
+                                if check_support(state, name, ratio=0.6):
+                                    # continue if children object is supported > 60%
+                                    continue
+                                print("all_relations_valid not valid ", name)
+                                objname = state.objs[name].obj.name
+                                delete_obj_with_children(
+                                    state.trimesh_scene,
+                                    objname,
+                                    delete_blender=True,
+                                    delete_asset=True,
+                                )
+                                state.objs.pop(name)
+                    if not bpy.app.background:
+                        invisible_others(hide_placeholder=True)
+                        bpy.ops.wm.redraw_timer(type="DRAW_WIN_SWAP", iterations=1)
+                        visible_others()
+                solver.del_no_relation_objects()
 
     # state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
     # state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)

@@ -219,6 +219,7 @@ def delete_collection(collection_name):
 
 
 def delete_objects():
+    
     logging.info("Deleting placeholders collection")
     collection_name = "placeholders"
     delete_collection(collection_name)
@@ -226,16 +227,20 @@ def delete_objects():
     collection_name = "mark"
     delete_collection(collection_name)
 
-    if bpy.data.objects.get("Grid"):
-        bpy.data.objects.remove(bpy.data.objects["Grid"], do_unlink=True)
+    # 删除特定名称的独立对象
+    for obj_name in ["Grid", "atmosphere", "KoleClouds"]:
+        if bpy.data.objects.get(obj_name):
+            bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)
 
-    if bpy.data.objects.get("atmosphere"):
-        bpy.data.objects.remove(bpy.data.objects["atmosphere"], do_unlink=True)
-
-    if bpy.data.objects.get("KoleClouds"):
-        bpy.data.objects.remove(bpy.data.objects["KoleClouds"], do_unlink=True)
-
-
+    # 删除散射水果对象及其关联数据
+    for obj in [o for o in bpy.data.objects if o.name.startswith("scatter_fruit")]:
+        # 清理对象数据
+        if hasattr(obj, 'data') and obj.data:
+            if obj.data.users == 1:  # 确保没有其他用户引用
+                bpy.data.meshes.remove(obj.data)
+        # 删除对象
+        bpy.data.objects.remove(obj, do_unlink=True)
+        
 def rename_all_meshes(obj=None):
     if obj is not None:
         if obj.data and obj.data.users == 1:

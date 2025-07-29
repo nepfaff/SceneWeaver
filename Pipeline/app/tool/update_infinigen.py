@@ -60,11 +60,12 @@ def update_infinigen(
     )
 
     # # if invisible:
-    if action == "export_supporter":
+    socket = os.getenv("socket")
+    if action == "export_supporter" or socket=="False":
         # if True:
         cmd = f"""
         source ~/anaconda3/etc/profile.d/conda.sh
-        conda activate infinigen_python
+        conda activate infinigen
         cd ~/workspace/SceneWeaver
         python -m infinigen_examples.generate_indoors --seed 0 --save_dir {save_dir} --task coarse --output_folder outputs/indoors/coarse_expand_whole_nobedframe -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False compose_indoors.invisible_room_ceilings_enabled=True > ~/workspace/SceneWeaver/Pipeline/run.log 2>&1
         """

@@ -48,13 +48,14 @@ def statistic_traj(iter):
             ]
             traj["results"]["Object Difference"] = j["Object Difference"]
 
-        with open(f"{save_dir}/record_files/metric_{iter}.json", "r") as f:
-            j = json.load(f)
-            traj["results"]["Physics score"] = {
-                "object number": j["Nobj"],
-                "object not inside the room": j["OOB Objects"],
-                "object has collision": j["BBL objects"],
-            }
+        if os.path.exists(f"{save_dir}/record_files/metric_{iter}.json"):
+            with open(f"{save_dir}/record_files/metric_{iter}.json", "r") as f:
+                j = json.load(f)
+                traj["results"]["Physics score"] = {
+                    "object number": j["Nobj"],
+                    "object not inside the room": j["OOB Objects"],
+                    "object has collision": j["BBL objects"],
+                }
 
         trajs[i] = traj
 
@@ -69,8 +70,11 @@ def eval_scene(iter, user_demand):
     obj_diff = diff_objects(iter)
 
     save_dir = os.getenv("save_dir")
-    with open(f"{save_dir}/record_files/metric_{iter}.json", "r") as f:
-        results = json.load(f)
+    if os.path.exists(f"{save_dir}/record_files/metric_{iter}.json"):
+        with open(f"{save_dir}/record_files/metric_{iter}.json", "r") as f:
+            results = json.load(f)
+    else:
+        results = {"OOB Objects":0,"BBL objects":0,"Nobj":"Unknown"}
 
     metric = dict()
     metric["Object Difference"] = obj_diff

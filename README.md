@@ -54,7 +54,7 @@ conda env create --prefix /home/yandan/anaconda3/envs/sceneweaver -f environment
 
 #### Prepare conda env for SceneWeaver's executor :
 ```
-conda create --name infinigen python=3.11
+conda create --name infinigen python=3.10.14
 conda activate infinigen 
 ```
 
@@ -149,7 +149,7 @@ python -m infinigen.launch_blender -m infinigen_examples.generate_indoors_vis --
 ```
 cd SceneWeaver/Pipeline
 conda activate sceneweaver
-python main.py --prompt Design me a bedroom. --cnt 1 --basedir PATH/TO/SAVE
+python main.py --prompt Design me a bedroom. --cnt 1 --basedir PATH/TO/SAVE --socket
 ```
 Then you can check the scene in the `Blender` window and `PATH/TO/SAVE`
 

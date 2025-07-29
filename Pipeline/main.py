@@ -45,10 +45,13 @@ if __name__ == "__main__":
                    help='Number of scene to generate. Default is 1')
     parser.add_argument('--basedir', type=str, default="/mnt/fillipo/yandan/scenesage/record_scene/manus/",
                    help='The basic path to save all the generated scenes.')
+    parser.add_argument('--socket', type=str, default="False", help='Run with Blender in the foreground')
+
     args = parser.parse_args()
     prompts = [args.prompt]
     cnt = args.cnt
     basedir = args.basedir
+    os.environ["socket"] = args.socket
     
     # cnt = 3
     # prompts = ["Design me a baby room."]

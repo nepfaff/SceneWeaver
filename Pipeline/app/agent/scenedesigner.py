@@ -67,15 +67,15 @@ class SceneDesigner:
         InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
     )
     available_tools1 = ToolCollection(
-        # AddAcdcExecute(),
-        # AddGPTExecute(),
+        AddAcdcExecute(),
+        AddGPTExecute(),
         AddCrowdExecute(),
-        # AddRelationExecute(),
-        # UpdateLayoutExecute(),
-        # UpdateRotationExecute(),
-        # UpdateSizeExecute(),
-        # Terminate(),
-        # RemoveExecute(),
+        AddRelationExecute(),
+        UpdateLayoutExecute(),
+        UpdateRotationExecute(),
+        UpdateSizeExecute(),
+        Terminate(),
+        RemoveExecute(),
     )
 
     available_tools2 = ToolCollection(Terminate())

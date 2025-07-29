@@ -1369,7 +1369,7 @@ def accessibility_cost_cuboid_penetration(
 
 
 @gin.configurable
-def accessibility_cost(scene, a, b, normal, visualize=False, fast=True):
+def accessibility_cost(scene, a, b, normal = np.array([1, 0, 0]), visualize=False, fast=True):
     """
     Computes how much objs b block front access to a. b obj blockages are not summed.
     the closest b obj to a is taken as the representative blockage
