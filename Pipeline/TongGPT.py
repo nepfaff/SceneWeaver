@@ -1,4 +1,5 @@
-from openai import AzureOpenAI
+import json
+from openai import AzureOpenAI, OpenAI
 
 # from utils import local_image_to_data_url, resize, extract_json
 
@@ -7,21 +8,33 @@ class TongGPT:
     def __init__(self, MODEL="gpt-35-turbo-0125", REGION="westus"):
         super().__init__()
         self.REGION = REGION
-        API_BASE = "https://api.tonggpt.mybigai.ac.cn/proxy"
-        self.ENDPOINT = f"{API_BASE}/{self.REGION}"
         self.MODEL = MODEL
         with open("key.txt","r") as f:
             lines = f.readlines()
         self.API_KEY = lines[0].strip()
-        self.api_version = "2025-03-01-preview" #"2024-02-01"
+
+        # Load config to check api_type
+        try:
+            with open("config/config.json", "r") as f:
+                config = json.load(f)
+            self.api_type = config.get("llm", {}).get("api_type", "azure")
+        except:
+            self.api_type = "azure"
+
+        self.api_version = "2025-03-01-preview"
         self.init_client()
 
     def init_client(self):
-        self.client = AzureOpenAI(
-            api_key=self.API_KEY,
-            api_version=self.api_version,
-            azure_endpoint=self.ENDPOINT,
-        )
+        if self.api_type == "openai":
+            self.client = OpenAI(api_key=self.API_KEY)
+        else:
+            API_BASE = "https://api.tonggpt.mybigai.ac.cn/proxy"
+            self.ENDPOINT = f"{API_BASE}/{self.REGION}"
+            self.client = AzureOpenAI(
+                api_key=self.API_KEY,
+                api_version=self.api_version,
+                azure_endpoint=self.ENDPOINT,
+            )
         return self.client
 
     def send_request(self, kw):

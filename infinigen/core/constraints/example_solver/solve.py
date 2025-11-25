@@ -458,8 +458,9 @@ class Solver:
         # """
         # subprocess.run(["bash", "-c", cmd])
        
+        sw_dir = os.getenv("sceneweaver_dir", os.getcwd())
         os.system(
-            f'env -i bash --norc --noprofile -c "./run/retrieve.sh {save_dir}" > run.log 2>&1'
+            f'bash "{sw_dir}/run/retrieve.sh" "{save_dir}" > run.log 2>&1'
         )
         with open(f"{save_dir}/objav_files.json", "r") as f:
             self.LoadObjavFiles = json.load(f)
@@ -606,10 +607,15 @@ class Solver:
                     )
 
                     if module_and_class is None:
+                        # Check if category has assets available
+                        category = name
+                        if category not in self.LoadObjavFiles or not self.LoadObjavFiles[category]:
+                            print(f"Warning: No assets found for category '{category}', skipping...")
+                            continue
+
                         gen_class = GeneralObjavFactory
                         size = value[num]["size"]
                         x_dim, y_dim, z_dim = size
-                        category = name
                         gen_class._x_dim = x_dim
                         gen_class._y_dim = y_dim
                         gen_class._z_dim = z_dim

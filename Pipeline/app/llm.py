@@ -6,6 +6,7 @@ from openai import (
     APIError,
     AuthenticationError,
     AzureOpenAI,
+    OpenAI,
     OpenAIError,
     RateLimitError,
 )
@@ -217,18 +218,28 @@ class LLM:
                 # If the model is not in tiktoken's presets, use cl100k_base as default
                 self.tokenizer = tiktoken.get_encoding("cl100k_base")
 
-            REGION = "eastus2"
-            API_BASE = "https://api.tonggpt.mybigai.ac.cn/proxy"
-            self.ENDPOINT = f"{API_BASE}/{REGION}"
-            self.MODEL = self.model  # "gpt-4o-2024-08-06"
-            # with open("key.txt","r") as f:
-            #     lines = f.readlines()
-            # self.API_KEY = lines[0].strip()
-            self.client = AzureOpenAI(
-                api_key=self.api_key,
-                api_version=self.api_version,
-                azure_endpoint=self.ENDPOINT,
-            )
+            self.MODEL = self.model
+
+            # Initialize client based on api_type
+            if self.api_type == "openai":
+                self.client = OpenAI(
+                    api_key=self.api_key,
+                )
+            else:
+                # Default to Azure OpenAI
+                if self.base_url and "{" not in self.base_url:
+                    # Use configured base_url
+                    self.ENDPOINT = self.base_url
+                else:
+                    # Fallback to default Azure endpoint
+                    REGION = "eastus2"
+                    API_BASE = "https://api.tonggpt.mybigai.ac.cn/proxy"
+                    self.ENDPOINT = f"{API_BASE}/{REGION}"
+                self.client = AzureOpenAI(
+                    api_key=self.api_key,
+                    api_version=self.api_version,
+                    azure_endpoint=self.ENDPOINT,
+                )
 
             self.token_counter = TokenCounter(self.tokenizer)
 

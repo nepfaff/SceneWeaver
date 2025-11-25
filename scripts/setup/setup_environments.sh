@@ -3,19 +3,10 @@
 setup_environments() {
     local SCENEWEAVER_DIR="$1"
 
-    print_header "Setting Up Python Environments"
+    print_header "Setting Up Python Environment"
 
-    # 1. SceneWeaver Planner Environment
-    print_info "Creating sceneweaver conda environment..."
-    if conda env list | grep -q "^sceneweaver "; then
-        print_warning "sceneweaver environment already exists, skipping..."
-    else
-        conda env create -f "${SCENEWEAVER_DIR}/environment_sceneweaver.yml"
-        print_success "sceneweaver environment created"
-    fi
-
-    # 2. Infinigen Executor Environment
-    print_info "Setting up infinigen environment with uv..."
+    # Setting up unified environment with uv
+    print_info "Setting up Python environment with uv..."
 
     cd "${SCENEWEAVER_DIR}"
 
@@ -34,7 +25,7 @@ setup_environments() {
         print_success "Created .python-version file"
     fi
 
-    # Install Python dependencies with uv
+    # Install Python dependencies with uv (including pipeline extras)
     print_info "Installing dependencies with uv sync..."
     if [ -d ".venv" ]; then
         print_warning ".venv already exists"
@@ -42,13 +33,13 @@ setup_environments() {
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             rm -rf .venv
-            uv sync
+            uv sync --extra pipeline
             print_success "Dependencies installed with uv"
         else
             print_warning "Skipping dependency installation"
         fi
     else
-        uv sync
+        uv sync --extra pipeline
         print_success "Dependencies installed with uv"
     fi
 
@@ -63,7 +54,7 @@ setup_environments() {
 
     print_success "Environment setup complete!"
     echo ""
-    print_info "Available environments:"
-    echo "  - sceneweaver: Planner environment (Python 3.8)"
-    echo "  - .venv: Infinigen executor environment (Python 3.10)"
+    print_info "Environment:"
+    echo "  - .venv: Unified environment (Python 3.10) for both Pipeline and Infinigen"
+    echo "  - Activate with: source .venv/bin/activate"
 }

@@ -41,6 +41,13 @@ def update_infinigen(
     inplace=False,
     invisible=False,
 ):
+    # Convert save_dir to absolute path
+    save_dir = os.getenv("save_dir")
+    save_dir = os.path.abspath(save_dir)
+
+    # Also convert json_name to absolute path
+    json_name = os.path.abspath(json_name)
+
     j = {
         "iter": iter,
         "action": action,
@@ -51,7 +58,6 @@ def update_infinigen(
         "success": False,
         "ideas": ideas,
     }
-    save_dir = os.getenv("save_dir")
     argsfile = f"{save_dir}/args.json"
     with open(argsfile, "w") as f:
         json.dump(j, f, indent=4)
@@ -65,10 +71,9 @@ def update_infinigen(
     if action == "export_supporter" or socket=="False":
         # if True:
         cmd = f"""
-        source ~/anaconda3/etc/profile.d/conda.sh
-        conda activate infinigen
+        source {sw_dir}/.venv/bin/activate
         cd {sw_dir}
-        python -m infinigen_examples.generate_indoors --seed 0 --save_dir {save_dir} --task coarse --output_folder outputs/indoors/coarse_expand_whole_nobedframe -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False compose_indoors.invisible_room_ceilings_enabled=True > {sw_dir}run.log 2>&1
+        python -m infinigen_examples.generate_indoors --seed 0 --save_dir {save_dir} --task coarse --output_folder outputs/indoors/coarse_expand_whole_nobedframe -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False compose_indoors.invisible_room_ceilings_enabled=True > {sw_dir}/run.log 2>&1
         """
         subprocess.run(["bash", "-c", cmd])
         # else:

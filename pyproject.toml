@@ -73,6 +73,34 @@ dev = [
 wandb = [
     "wandb"
 ]
+pipeline = [
+    "openai>=1.0.0",
+    "transformers>=4.40.0",
+    "sentence-transformers>=3.0.0",
+    "streamlit>=1.30.0",
+    "tiktoken>=0.5.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.25.0",
+    "rich>=13.0.0",
+    "loguru>=0.7.0",
+    "omegaconf>=2.3.0",
+    "open-clip-torch>=2.20.0",
+    "albumentations>=1.4.0",
+    "kornia>=0.7.0",
+    "ftfy>=6.0.0",
+    "huggingface-hub>=0.20.0",
+    "safetensors>=0.4.0",
+    "timm>=1.0.0",
+    "einops>=0.8.0",
+    "dill>=0.3.0",
+    "objaverse>=0.1.7",
+    "torch_redstone",
+    "open3d",
+    # Holodeck retrieval dependencies
+    "objathor>=0.0.8",
+    "compress-json>=1.1.0",
+    "compress-pickle>=2.1.0",
+]
 
 [tool.setuptools]
 # include-package-data is terribly named. package-data is still included if false,

@@ -79,3 +79,11 @@ process_mesh
 worldgen
 Pipeline/key.txt
 .venv
+
+# Pipeline outputs
+Pipeline/test_output/
+test_output/
+run.log
+
+# uv lock file (optional - can be tracked for reproducibility)
+# uv.lock

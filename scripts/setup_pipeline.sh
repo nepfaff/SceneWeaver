@@ -109,13 +109,6 @@ print_info "Workspace directory: ${WORKSPACE_DIR}"
 # Check prerequisites
 print_header "Checking Prerequisites"
 
-command -v conda >/dev/null 2>&1 || {
-    print_error "conda is not installed. Please install Miniconda or Anaconda first."
-    echo "Download from: https://docs.conda.io/en/latest/miniconda.html"
-    exit 1
-}
-print_success "conda found"
-
 command -v git >/dev/null 2>&1 || {
     print_error "git is not installed. Please install git first."
     exit 1
@@ -176,7 +169,7 @@ if [ "${INSTALL_MODE}" = "minimal" ]; then
     echo ""
     echo "To run the pipeline:"
     echo "  cd Pipeline"
-    echo "  conda activate sceneweaver"
+    echo "  source ../.venv/bin/activate"
     echo "  python main.py --prompt 'Design me a bedroom.' --cnt 1 --basedir ./output/"
     echo ""
     echo "To install additional tools and datasets, run:"
@@ -187,7 +180,7 @@ else
     echo ""
     echo "To run the pipeline:"
     echo "  cd Pipeline"
-    echo "  conda activate sceneweaver"
+    echo "  source ../.venv/bin/activate"
     echo "  python main.py --prompt 'Design me a bedroom.' --cnt 1 --basedir ./output/"
 fi
 

@@ -34,7 +34,7 @@ For more information, please visit our [**project page**](https://scene-weaver.g
 ## Requirements
 - Linux machine
 - Python 3.10
-- [uv](https://docs.astral.sh/uv/) (recommended) or Conda
+- [uv](https://docs.astral.sh/uv/)
 
 ## ⚙️ Installation & Dependencies
 
@@ -62,8 +62,8 @@ bash scripts/setup_pipeline.sh --full \
 ```
 
 The script will:
-- ✅ Create all required conda environments
-- ✅ Install Python dependencies with uv
+- ✅ Create the Python environment with uv
+- ✅ Install all Python dependencies
 - ✅ Download and install Blender 3.6
 - ✅ Clone external tools (SD 3.5, Tabletop Digital Cousins)
 - ✅ Download datasets (3D FUTURE, etc.)
@@ -147,7 +147,7 @@ If you need to adjust paths, edit `.env` and update:
 Run a minimal test:
 ```bash
 cd Pipeline
-conda activate sceneweaver
+source ../.venv/bin/activate
 python main.py --prompt "Design me a simple bedroom with a bed and nightstand." --cnt 1 --basedir ./test_output/
 ```
 
@@ -162,7 +162,7 @@ The output will be saved in `./test_output/` with:
 #### Mode 1: Background (Headless)
 ```bash
 cd Pipeline
-conda activate sceneweaver
+source ../.venv/bin/activate
 python main.py --prompt "Design me a bedroom." --cnt 1 --basedir ./output/
 ```
 
@@ -186,7 +186,7 @@ python -m infinigen.launch_blender -m infinigen_examples.generate_indoors_vis \
 **Terminal 2** - Run the agent:
 ```bash
 cd Pipeline
-conda activate sceneweaver
+source ../.venv/bin/activate
 python main.py --prompt "Design me a bedroom." --cnt 1 --basedir ./output/ --socket True
 ```
 
@@ -204,10 +204,9 @@ You'll see the scene being generated in real-time in the Blender window.
 - Solution: Make sure you added your Azure OpenAI key to `Pipeline/key.txt`
 
 **Issue: "ModuleNotFoundError: No module named 'infinigen'"**
-- Solution: Make sure you activated the correct environment:
+- Solution: Make sure you activated the environment:
   ```bash
-  source .venv/bin/activate  # For Infinigen/Blender tasks
-  conda activate sceneweaver  # For Pipeline/agent tasks
+  source .venv/bin/activate  # From the SceneWeaver root directory
   ```
 
 **Issue: "git submodule error"**
@@ -275,52 +274,7 @@ INFINIGEN_INSTALL_CUSTOMGT=True bash scripts/install/interactive_blender.sh
 
 More details can refer to [official repo of Infinigen](https://github.com/princeton-vl/infinigen/blob/main/docs/Installation.md#installing-infinigen-as-a-blender-python-script).
 
-### Option 2: Using Conda
 
-#### Prepare conda env for SceneWeaver's planner:
-```
-conda env create --prefix /home/yandan/anaconda3/envs/sceneweaver -f environment_sceneweaver.yml
-```
-
-#### Prepare conda env for SceneWeaver's executor :
-```
-conda create --name infinigen python=3.10.14
-conda activate infinigen 
-pip install bpy==3.6.0
-pip install gin-config
-pip install frozendict
-pip install shapely
-pip install trimesh
-pip install tqdm
-pip install opencv-python
-pip install matplotlib
-pip install imageio
-pip install scipy
-pip install scikit-learn
-pip install psutil
-pip install scikit-image
-pip install submitit
-pip install python-fcl
-pip install pandas
-pip install geomdl
-pip install Rtree
-
-```
-
-Then, install using one of the options below:
-```
-# Minimal installation (recommended setting for use in the Blender UI)
-INFINIGEN_MINIMAL_INSTALL=True bash scripts/install/interactive_blender.sh
-
-# Normal install
-bash scripts/install/interactive_blender.sh
-
-# Enable OpenGL GT
-INFINIGEN_INSTALL_CUSTOMGT=True bash scripts/install/interactive_blender.sh
-```
-More details can refer to [official repo of Infinigen](https://github.com/princeton-vl/infinigen/blob/main/docs/Installation.md#installing-infinigen-as-a-blender-python-script).
-
-                                                        
 ## Available Tools:
 
 Here we adapt the following tools to our framework. You could choose what you want from the following tools or expand the framework to other tools (such as architecture, Text-2-3D)  you need. 
@@ -376,9 +330,9 @@ We provide two resource & retrieve pipeline for Objaverse (OpenShape & Holodeck)
 ## Usage
 
 #### Mode 1: Run with Blender in the background
-```
+```bash
 cd Pipeline
-conda activate sceneweaver
+source ../.venv/bin/activate
 python main.py --prompt "Design me a bedroom." --cnt 1 --basedir PATH/TO/SAVE
 ```
 Then you can check the scene in `PATH/TO/SAVE`. The intermediate scene in each step is saved in `record_files`. You can open relative `.blend` file in blender to check the result of each step.
@@ -388,17 +342,17 @@ Interactable & convenient to check generating process.
 
 You need to open **two** terminal.
 
-**Terminal 1**: Run infinigen with socket to connect with blender 
-```
+**Terminal 1**: Run infinigen with socket to connect with blender
+```bash
 cd SceneWeaver
-conda activate infinigen
+source .venv/bin/activate
 python -m infinigen.launch_blender -m infinigen_examples.generate_indoors_vis --save_dir debug/ -- --seed 0 --task coarse  --output_folder debug/ -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False
 ```
-**Terminal 2**: Run SceneWeaver to launch the agent 
-```
+**Terminal 2**: Run SceneWeaver to launch the agent
+```bash
 cd SceneWeaver/Pipeline
-conda activate sceneweaver
-python main.py --prompt Design me a bedroom. --cnt 1 --basedir PATH/TO/SAVE --socket
+source ../.venv/bin/activate
+python main.py --prompt "Design me a bedroom." --cnt 1 --basedir PATH/TO/SAVE --socket
 ```
 Then you can check the scene in the `Blender` window and `PATH/TO/SAVE`
 
