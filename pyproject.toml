@@ -163,3 +163,6 @@ ignore = [
 
 [tool.pytype]
 inputs = ['infinigen', 'infinigen_examples']
+
+[tool.uv]
+find-links = ["https://download.blender.org/pypi/bpy/"]

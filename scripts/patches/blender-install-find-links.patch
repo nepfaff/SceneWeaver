@@ -1,0 +1,12 @@
+diff --git a/scripts/install/interactive_blender.sh b/scripts/install/interactive_blender.sh
+index 8b64fe20..5f6d7a63 100644
+--- a/scripts/install/interactive_blender.sh
++++ b/scripts/install/interactive_blender.sh
+@@ -66,4 +66,4 @@ fi
+ # Install Blender dependencies
+ "${BLENDER_PYTHON}" -m ensurepip
+ 
+-CFLAGS="-I/usr/include/python3.10 -I/usr/include/ -I/usr/include/x86_64-linux-gnu ${CFLAGS}" "${BLENDER_PYTHON}" -m pip install -e .
+\ No newline at end of file
++CFLAGS="-I/usr/include/python3.10 -I/usr/include/ -I/usr/include/x86_64-linux-gnu ${CFLAGS}" "${BLENDER_PYTHON}" -m pip install -e . --find-links https://download.blender.org/pypi/bpy/
+\ No newline at end of file

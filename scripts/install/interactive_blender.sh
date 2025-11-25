@@ -66,4 +66,4 @@ fi
 # Install Blender dependencies
 "${BLENDER_PYTHON}" -m ensurepip
 
-CFLAGS="-I/usr/include/python3.10 -I/usr/include/ -I/usr/include/x86_64-linux-gnu ${CFLAGS}" "${BLENDER_PYTHON}" -m pip install -e .
+CFLAGS="-I/usr/include/python3.10 -I/usr/include/ -I/usr/include/x86_64-linux-gnu ${CFLAGS}" "${BLENDER_PYTHON}" -m pip install -e . --find-links https://download.blender.org/pypi/bpy/

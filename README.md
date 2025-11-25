@@ -33,19 +33,249 @@ For more information, please visit our [**project page**](https://scene-weaver.g
 
 ## Requirements
 - Linux machine
-- Conda
+- Python 3.10
+- [uv](https://docs.astral.sh/uv/) (recommended) or Conda
 
 ## ⚙️ Installation & Dependencies
 
-#### Download this repo in your workspace
+### Quick Start: Automated Setup (Recommended)
+
+We provide an automated setup script that handles all installation steps:
+
+> **Note:** The setup includes a modification to `scripts/install/interactive_blender.sh` to add `--find-links` for the Blender repository. This is necessary for installing bpy into Blender's Python. See `scripts/patches/README.md` for details.
+
+```bash
+# Minimal setup (LLM-based tools + Infinigen only)
+bash scripts/setup_pipeline.sh --minimal
+
+# Full setup (all tools and datasets)
+bash scripts/setup_pipeline.sh --full
+
+# Custom workspace directory
+bash scripts/setup_pipeline.sh --workspace /path/to/workspace
+
+# Use existing datasets (optional)
+bash scripts/setup_pipeline.sh --full \
+  --existing-3d-future /path/to/3D-FUTURE \
+  --existing-metascenes /path/to/metascenes \
+  --existing-objaverse /path/to/objaverse
 ```
+
+The script will:
+- ✅ Create all required conda environments
+- ✅ Install Python dependencies with uv
+- ✅ Download and install Blender 3.6
+- ✅ Clone external tools (SD 3.5, Tabletop Digital Cousins)
+- ✅ Download datasets (3D FUTURE, etc.)
+- ✅ Set up configuration templates
+
+### Post-Setup Configuration
+
+After running the setup script, complete these manual steps:
+
+#### 1. Configure Azure OpenAI API
+
+Edit `Pipeline/key.txt` and add your API key:
+```
+your-actual-azure-openai-api-key-here
+```
+
+Edit `Pipeline/config/config.json`:
+```json
+{
+    "llm_name": "gpt-4.1-2025-04-14",
+    "llm_config": {
+        "base_url": "https://YOUR_ENDPOINT.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT_ID",
+        "api_version": "2025-03-01-preview"
+    }
+}
+```
+
+#### 2. Configure Available Tools
+
+Edit `Pipeline/app/agent/scenedesigner.py` (lines 66-79) to enable/disable tools based on what you installed:
+
+**Minimal Setup (default):**
+```python
+available_tools0 = [InitGPTExecute()]  # LLM-based initialization only
+available_tools1 = [                   # Basic modifiers + LLM-based addition
+    AddGPTExecute(),
+    UpdateLayoutExecute(),
+    UpdateRotationExecute(),
+    UpdateSizeExecute(),
+    RemoveExecute(),
+    Terminate()
+]
+```
+
+**Full Setup (if you installed SD 3.5 + ACDC):**
+```python
+available_tools0 = [
+    InitGPTExecute(),
+    InitMetaSceneExecute(),  # If you have MetaScenes dataset
+    InitPhySceneExecute()     # Uses sample data in data/physcene/
+]
+available_tools1 = [
+    AddAcdcExecute(),         # SD 3.5 + Tabletop Digital Cousins
+    AddGPTExecute(),
+    AddCrowdExecute(),
+    AddRelationExecute(),
+    UpdateLayoutExecute(),
+    UpdateRotationExecute(),
+    UpdateSizeExecute(),
+    RemoveExecute(),
+    Terminate()
+]
+```
+
+#### 3. Verify Environment Paths
+
+Check the auto-generated `.env` file to ensure paths are correct:
+```bash
+cat .env
+```
+
+If you need to adjust paths, edit `.env` and update:
+- `WORKSPACE_DIR` - Where external tools and datasets are stored
+- `SD35_DIR` - Path to SD 3.5
+- `ACDC_DIR` - Path to Tabletop Digital Cousins
+- `FUTURE_3D_DIR` - Path to 3D FUTURE dataset
+- `METASCENES_DIR` - Path to MetaScenes dataset (if available)
+
+#### 4. Test Your Setup
+
+Run a minimal test:
+```bash
+cd Pipeline
+conda activate sceneweaver
+python main.py --prompt "Design me a simple bedroom with a bed and nightstand." --cnt 1 --basedir ./test_output/
+```
+
+The output will be saved in `./test_output/` with:
+- `scene_*.blend` - Blender scene files
+- `layout_*.json` - Object layouts
+- `render_*.jpg` - Top-down renders
+- `pipeline/` - Agent logs and tool results
+
+### Running the Pipeline
+
+#### Mode 1: Background (Headless)
+```bash
+cd Pipeline
+conda activate sceneweaver
+python main.py --prompt "Design me a bedroom." --cnt 1 --basedir ./output/
+```
+
+**Arguments:**
+- `--prompt`: Natural language scene description
+- `--cnt`: Number of scenes to generate (default: 1)
+- `--basedir`: Output directory path
+
+#### Mode 2: Foreground (Interactive with Blender UI)
+
+**Terminal 1** - Start Blender with socket:
+```bash
+cd SceneWeaver
+source .venv/bin/activate  # Use the infinigen environment
+python -m infinigen.launch_blender -m infinigen_examples.generate_indoors_vis \
+  --save_dir debug/ -- --seed 0 --task coarse --output_folder debug/ \
+  -g fast_solve.gin overhead.gin studio.gin \
+  -p compose_indoors.terrain_enabled=False
+```
+
+**Terminal 2** - Run the agent:
+```bash
+cd Pipeline
+conda activate sceneweaver
+python main.py --prompt "Design me a bedroom." --cnt 1 --basedir ./output/ --socket True
+```
+
+You'll see the scene being generated in real-time in the Blender window.
+
+### Troubleshooting
+
+**Issue: "Could not find a version that satisfies the requirement bpy==3.6.0"**
+- Solution: The setup script automatically configures the Blender repository. If you see this, run:
+  ```bash
+  uv sync
+  ```
+
+**Issue: "API key not found"**
+- Solution: Make sure you added your Azure OpenAI key to `Pipeline/key.txt`
+
+**Issue: "ModuleNotFoundError: No module named 'infinigen'"**
+- Solution: Make sure you activated the correct environment:
+  ```bash
+  source .venv/bin/activate  # For Infinigen/Blender tasks
+  conda activate sceneweaver  # For Pipeline/agent tasks
+  ```
+
+**Issue: "git submodule error"**
+- Solution: Re-initialize submodules:
+  ```bash
+  rm -rf infinigen/datagen/customgt/dependencies/glm
+  git submodule update --init --recursive
+  ```
+
+**Issue: External tools not found**
+- Solution: Check `.env` file and verify paths are correct. External tools should be in:
+  - `~/workspace/sd3.5/`
+  - `~/workspace/Tabletop-Digital-Cousins/`
+  - Or the custom workspace directory you specified
+
+**Issue: Out of memory**
+- Solution: Reduce scene complexity or use fewer objects. LLM-based tools (minimal setup) use less memory than SD+ACDC.
+
+---
+
+### Manual Installation
+
+If you prefer to install manually or need more control:
+
+#### Option 1: Using uv (Recommended)
+
+[uv](https://docs.astral.sh/uv/) is a fast Python package installer and resolver.
+
+#### Download this repo in your workspace
+```bash
 cd ~/workspace
 git clone https://github.com/Scene-Weaver/SceneWeaver.git
 cd SceneWeaver
 ```
 
+#### Install uv
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
 #### Set LLM api
 Save your api-key of GPT in `Pipeline/key.txt`. We use AzureOpenAI here. You can modify this module to fit your own LLM api.
+
+#### Set up the executor environment (infinigen)
+```bash
+# Initialize git submodules (required for building)
+git submodule update --init --recursive
+
+# Install all dependencies (uv automatically uses Python 3.10 from .python-version)
+# This installs bpy from the Blender repository and all other dependencies
+uv sync
+```
+
+Then, install Infinigen using one of the options below:
+```bash
+# Minimal installation (recommended setting for use in the Blender UI)
+INFINIGEN_MINIMAL_INSTALL=True bash scripts/install/interactive_blender.sh
+
+# Normal install
+bash scripts/install/interactive_blender.sh
+
+# Enable OpenGL GT
+INFINIGEN_INSTALL_CUSTOMGT=True bash scripts/install/interactive_blender.sh
+```
+
+More details can refer to [official repo of Infinigen](https://github.com/princeton-vl/infinigen/blob/main/docs/Installation.md#installing-infinigen-as-a-blender-python-script).
+
+### Option 2: Using Conda
 
 #### Prepare conda env for SceneWeaver's planner:
 ```
