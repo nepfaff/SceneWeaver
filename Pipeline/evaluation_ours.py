@@ -70,34 +70,34 @@ def statistic_traj(iter):
 
 
 def eval_scene(iter, user_demand):
-    # grades, grading = eval_general_score(iter, user_demand)
-    # obj_diff = diff_objects(iter)
+    grades, grading = eval_general_score(iter, user_demand)
+    obj_diff = diff_objects(iter)
 
-    # save_dir = os.getenv("save_dir")
-    # with open(
-    #     f"{save_dir}/record_files/metric_{iter}.json", "r"
-    # ) as f:
-    #     results = json.load(f)
+    save_dir = os.getenv("save_dir")
+    with open(
+        f"{save_dir}/record_files/metric_{iter}.json", "r"
+    ) as f:
+        results = json.load(f)
 
-    # metric = dict()
-    # metric["Object Difference"] = obj_diff
-    # metric["GPT score (0-10, higher is better)"] = grading
-    # # metric["Physics score"] = {
-    # #     "object number (higher is better)": results["Nobj"],
-    # #     "object not inside the room (lower is better)": results["OOB"],
-    # #     "object has collision (lower is better)": results["BBL"],
-    # #     # "object not inside the room (lower is better)": results["OOB Objects"],
-    # #     # "object has collision (lower is better)": results["BBL objects"],
-    # # }
+    metric = dict()
+    metric["Object Difference"] = obj_diff
+    metric["GPT score (0-10, higher is better)"] = grading
+    metric["Physics score"] = {
+        "object number (higher is better)": results["Nobj"],
+        "object not inside the room (lower is better)": results["OOB"],
+        "object has collision (lower is better)": results["BBL"],
+        "object has collision (real unique, lower is better)": results.get("BBL_real_unique", "N/A"),
+    }
 
-    # save_dir = os.getenv("save_dir")
-    # json_name = f"{save_dir}/pipeline/metric_{iter}.json"
-    # with open(json_name, "w") as f:
-    #     json.dump(metric, f, indent=4)
+    save_dir = os.getenv("save_dir")
+    json_name = f"{save_dir}/pipeline/metric_{iter}.json"
+    os.makedirs(os.path.dirname(json_name), exist_ok=True)
+    with open(json_name, "w") as f:
+        json.dump(metric, f, indent=4)
 
     action_trajs = statistic_traj(iter)
 
-    return
+    return grades, grading
 
 
 def eval_general_score(iter, user_demand):
@@ -242,7 +242,89 @@ You are working in a 3D scene environment with the following conventions:
     return grades, grading
 
 
+def find_max_iter(img_dir):
+    """Find the maximum iteration number from render files."""
+    max_iter = 0
+    for file in os.listdir(img_dir):
+        if file.endswith(".jpg") and len(file.split("_")) == 2:
+            try:
+                iter_num = int(file.split("_")[1].split(".")[0])
+                max_iter = max(max_iter, iter_num)
+            except:
+                continue
+    return max_iter
+
+
+def evaluate_single_scene(scene_path, prompt=None, gpt_eval=False):
+    """Evaluate a single scene at the given path."""
+    os.environ["save_dir"] = scene_path
+    img_dir = f"{scene_path}/record_scene"
+
+    if not os.path.exists(img_dir):
+        print(f"Error: {img_dir} does not exist")
+        return None
+
+    max_iter = find_max_iter(img_dir)
+    if max_iter == 0:
+        print(f"Error: No render files found in {img_dir}")
+        return None
+
+    # Infer prompt from directory name if not provided
+    if prompt is None:
+        dirname = os.path.basename(scene_path)
+        # Convert "Design_me_a_messy_kids_bedroom_0" -> "Design me a messy kids bedroom"
+        prompt = dirname.rsplit("_", 1)[0].replace("_", " ")
+
+    print(f"Evaluating {scene_path} at iter {max_iter}")
+    print(f"Prompt: {prompt}")
+
+    # Print physics metrics if available
+    metric_file = f"{scene_path}/record_files/metric_{max_iter}.json"
+    if os.path.exists(metric_file):
+        with open(metric_file, "r") as f:
+            metrics = json.load(f)
+        print("\nPhysics Metrics:")
+        print(f"  Objects: {metrics.get('Nobj', 'N/A')}")
+        print(f"  Out of bounds: {len(metrics.get('OOB Objects', []))}")
+        print(f"  Collisions: {len(metrics.get('BBL objects', []))}")
+        if metrics.get('BBL objects'):
+            print(f"  Colliding pairs:")
+            for pair in metrics['BBL objects']:
+                print(f"    - {pair}")
+    else:
+        print(f"\nWarning: Physics metrics not found at {metric_file}")
+        print("Physics metrics are computed during scene generation in Blender.")
+        print("To compute them, re-run the scene generation or run the evaluate step in Blender.")
+
+    # Run GPT evaluation if requested and metrics exist
+    if gpt_eval:
+        if not os.path.exists(metric_file):
+            print("\nError: Cannot run GPT evaluation without physics metrics file")
+            return None
+        result = eval_scene(max_iter, prompt)
+        return result
+
+    return None
+
+
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Evaluate SceneWeaver scenes")
+    parser.add_argument("--scene_path", type=str, default=None,
+                        help="Path to a single scene directory to evaluate")
+    parser.add_argument("--prompt", type=str, default=None,
+                        help="User prompt for the scene (inferred from dir name if not provided)")
+    parser.add_argument("--gpt_eval", action="store_true",
+                        help="Run GPT-based evaluation (requires OpenAI API key)")
+    args = parser.parse_args()
+
+    # Single scene evaluation mode
+    if args.scene_path:
+        evaluate_single_scene(args.scene_path, args.prompt, args.gpt_eval)
+        exit(0)
+
+    # Batch evaluation mode (original logic)
     roomtypes = ["kitchen"]
     for roomtype in roomtypes:
         save_dirs = []

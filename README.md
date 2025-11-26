@@ -427,11 +427,68 @@ PATH/TO/SAVE/
 
 
 
-## Evaluate 
+## Evaluate
 
+SceneWeaver includes evaluation tools that measure both physics metrics (collisions, out-of-bounds objects) and GPT-based quality scores (realism, functionality, layout, completion).
+
+### Automatic Metrics Generation
+
+Physics metrics are automatically computed during scene generation. When you run the pipeline, `metric_*.json` files are saved in `record_files/` for each iteration. This uses the original evaluation code in `infinigen_examples/steps/evaluate.py` for exact reproducibility.
+
+### Computing Metrics for Existing Scenes
+
+If you need to compute metrics for scenes that don't have them (e.g., older scenes), you can use the standalone script:
+
+```bash
+# Compute metrics for a single scene
+./blender/blender --background PATH/TO/scene_14.blend \
+  --python infinigen_examples/compute_metrics.py \
+  -- --output PATH/TO/record_files/metric_14.json
+
+# Example:
+./blender/blender --background \
+  "Pipeline/output/Design_me_a_bedroom_0/record_files/scene_5.blend" \
+  --python infinigen_examples/compute_metrics.py \
+  -- --output "Pipeline/output/Design_me_a_bedroom_0/record_files/metric_5.json"
 ```
+
+The script outputs:
+- `Nobj`: Total number of objects
+- `OOB`: Objects outside room bounds
+- `BBL`: Number of collision pairs (Bounding Box overlap/collision)
+
+### Step 2: Run Evaluation Script
+
+After computing physics metrics, you can run the evaluation script:
+
+```bash
+cd Pipeline
+source ../.venv/bin/activate
+
+# Evaluate a single scene (displays physics metrics)
+python evaluation_ours.py --scene_path PATH/TO/SCENE_FOLDER
+
+# Evaluate with GPT scoring (requires OpenAI API key)
+python evaluation_ours.py --scene_path PATH/TO/SCENE_FOLDER --gpt_eval
+
+# Example:
+python evaluation_ours.py --scene_path ./output/Design_me_a_bedroom_0
+
+# Batch evaluation (original mode - evaluates multiple scenes)
 python evaluation_ours.py
 ```
+
+### Evaluation Metrics
+
+| Category | Metric | Description |
+|----------|--------|-------------|
+| Physics | `Nobj` | Total object count |
+| Physics | `OOB` | Objects outside room bounds (lower is better) |
+| Physics | `BBL` | Collision pairs (lower is better) |
+| GPT | `realism` | How realistic the scene appears (0-10) |
+| GPT | `functionality` | How well it supports intended activities (0-10) |
+| GPT | `layout` | Logical furniture arrangement (0-10) |
+| GPT | `completion` | How complete/finished the room feels (0-10) |
 
 
 ## Export to USD for Isaac Sim 

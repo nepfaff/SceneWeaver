@@ -367,7 +367,7 @@ def compose_indoors(
         state, solver, terrain, house_bbox, solved_bbox, camera_rigs, iter, p
     )
 
-    # evaluate.eval_metric(state, iter, remove_bad=True)
+    evaluate.eval_metric(state, iter, remove_bad=True)
 
     record_success()
 
