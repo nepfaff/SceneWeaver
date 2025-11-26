@@ -77,8 +77,11 @@ class InitGPTExecute(BaseTool):
             assert success
 
             return "Successfully initialize scene with GPT."
-        except Exception:
-            return "Error initializing scene with GPT."
+        except Exception as e:
+            import traceback
+            print(f"init_gpt error: {e}")
+            traceback.print_exc()
+            return f"Error initializing scene with GPT: {e}"
 
     def gen_gpt_scene(self, user_demand, ideas, roomtype):
         json_name = self.generate_scene_iter0(user_demand, ideas, roomtype)

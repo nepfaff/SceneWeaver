@@ -26,7 +26,7 @@ __pycache__
 *.DS_Store
 **._.DS_Store
 **.swp
-
+Pipeline/output
 .idea
 Blender.app/
 blender.dmg

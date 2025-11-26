@@ -75,7 +75,7 @@ class InitPhySceneExecute(BaseTool):
                 }
                 json.dump(info, f, indent=4)
             os.system(
-                f"cp {save_dir}/roominfo.json ~/workspace/SceneWeaver/roominfo.json"
+                f"cp {save_dir}/roominfo.json ../run/roominfo.json"
             )
             success = update_infinigen(action, iter, json_name, ideas=ideas)
             assert success
@@ -89,14 +89,17 @@ class InitPhySceneExecute(BaseTool):
             assert success
 
             return "Successfully generate a scene by neural network."
-        except Exception:
-            return "Error generating a scene by neural network."
+        except Exception as e:
+            import traceback
+            print(f"init_physcene error: {e}")
+            traceback.print_exc()
+            return f"Error generating a scene by neural network: {e}"
 
     def find_physcene(self, user_demand, ideas, roomtype):
         roomtype = roomtype.lower()
         if roomtype.endswith("room"):
             roomtype = roomtype[:-4].strip()
-        basedir = "~/workspace/PhyScene/3D_front/generate_filterGPN_clean/"
+        basedir = os.path.join(os.path.dirname(__file__), "../../../data/physcene/")
         files = os.listdir(basedir)
         random.shuffle(files)
         for filename in files:

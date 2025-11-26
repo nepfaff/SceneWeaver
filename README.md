@@ -275,23 +275,48 @@ INFINIGEN_INSTALL_CUSTOMGT=True bash scripts/install/interactive_blender.sh
 More details can refer to [official repo of Infinigen](https://github.com/princeton-vl/infinigen/blob/main/docs/Installation.md#installing-infinigen-as-a-blender-python-script).
 
 
-## Available Tools:
+## Available Tools
 
-Here we adapt the following tools to our framework. You could choose what you want from the following tools or expand the framework to other tools (such as architecture, Text-2-3D)  you need. 
-You should modify `available_tools0` and `available_tools1` in [Pipeline/app/agent/scenedesigner.py](Pipeline/app/agent/scenedesigner.py#L67) to fit the tools you have prepared.
+### Tool Status Summary
 
-Initializer:
-- [x] LLM: GPT
-- [x] Dataset: MetaScenes (saved on fillipo)
-- [x] Model: PhyScene/DiffuScene/ATISS (we provide some samples in `data/physcene`)
-<!-- - [x] Model: PhyScene/DiffuScene/ATISS ([donwload generated scenes in json](https://huggingface.co/datasets/yangyandan/PhyScene/tree/main/generated_scenes)) -->
+| Tool | Status | Notes |
+|------|--------|-------|
+| `init_gpt` | ✅ Works | Initialize scene with GPT layout generation |
+| `init_metascene` | ❌ Requires external data | Needs MetaScene dataset (not included) |
+| `init_physcene` | ✅ Works | Uses sample data in `data/physcene/` |
+| `add_gpt` | ✅ Works | Add objects using GPT |
+| `add_acdc` | ❌ Requires external systems | Needs SD 3.5 + ACDC (not included) |
+| `add_crowd` | ✅ Works | Add crowded placement using GPT |
+| `add_relation` | ✅ Works | Add explicit relations between objects |
+| `update_layout` | ✅ Works | Update object positions |
+| `update_rotation` | ✅ Works | Update object rotations |
+| `update_size` | ✅ Works | Update object sizes |
+| `remove_obj` | ✅ Works | Remove objects from scene |
+| `terminate` | ✅ Works | End pipeline |
 
-Implementer:
-- [x] Visual: [SD](https://github.com/Scene-Weaver/sd3.5) + [Tabletop Digital Cousin](https://github.com/Scene-Weaver/Tabletop-Digital-Cousins)
+You can expand the framework to other tools (such as architecture, Text-2-3D) as needed.
+Modify `available_tools0` and `available_tools1` in [Pipeline/app/agent/scenedesigner.py](Pipeline/app/agent/scenedesigner.py#L67) to configure which tools are available.
+
+### Unavailable Tools - External Dependencies
+
+These tools require external datasets/systems from the original authors that are not included in this repository:
+
+- **`init_metascene`**: Requires MetaScene dataset at `/mnt/fillipo/yandan/metascene/`
+- **`add_acdc`**: Requires [SD 3.5](https://github.com/Scene-Weaver/sd3.5) + [Tabletop Digital Cousins](https://github.com/Scene-Weaver/Tabletop-Digital-Cousins) + conda environment
+
+### Working Tools by Category
+
+**Initializers:**
+- [x] LLM: GPT (`init_gpt`)
+- [ ] Dataset: MetaScenes (requires external data)
+- [x] Model: PhyScene/DiffuScene/ATISS (sample data in `data/physcene/`)
+
+**Implementers:**
+- [ ] Visual: SD + Tabletop Digital Cousin (requires external setup)
 - [x] LLM: GPT (both sparse & crowded)
-- [x] Rule
+- [x] Rule-based relations
 
-Modifier:
+**Modifiers:**
 - [x] Update Layout/Rotation/Size
 - [x] Add Relation
 - [x] Remove Objects

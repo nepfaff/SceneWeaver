@@ -12,7 +12,7 @@ def main(prompt, i, basedir):
             :30
         ].replace(" ", "_").replace(".", "").replace(",", "_").replace("[", "").replace(
             "]", ""
-        )
+        ).replace("'", "").replace('"', "").replace("!", "").replace("?", "")
         save_dir = save_dir + "_" + str(i)
         os.makedirs(save_dir, exist_ok=True)
             
