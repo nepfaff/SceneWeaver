@@ -111,7 +111,7 @@ class AddGPTExecute(InitGPTExecute):
         print(gpt_text_response)
 
         gpt_dict_response = extract_json(
-            gpt_text_response.replace("'", '"').replace("None", "null")
+            gpt_text_response.replace("None", "null")
         )
         name_mapping = gpt_dict_response["Mapping results"]
         results["name_mapping"] = name_mapping

@@ -145,7 +145,7 @@ class InitGPTExecute(BaseTool):
             # gpt_text_response = '{\n    "Roomtype": "Bookstore",\n    "list of given category names": ["sofa", "armchair", "coffee table", "TV stand", "large shelf", "side table", "floor lamp", "remote control", "book", "magazine", "decorative bowl", "photo frame", "vase", "candle", "coaster", "plant"],\n    "Mapping results": {\n        "sofa": "seating.SofaFactory",\n        "armchair": "seating.ArmChairFactory",\n        "coffee table": "tables.CoffeeTableFactory",\n        "TV stand": "shelves.TVStandFactory",\n        "large shelf": "shelves.LargeShelfFactory",\n        "side table": "tables.SideTableFactory",\n        "floor lamp": "lamp.FloorLampFactory",\n        "remote control": null,\n        "book": "table_decorations.BookStackFactory",\n        "magazine": null,\n        "decorative bowl": "tableware.BowlFactory",\n        "photo frame": null,\n        "vase": "table_decorations.VaseFactory",\n        "candle": null,\n        "coaster": null,\n        "plant": "tableware.PlantContainerFactory"\n    }\n}'
             try:
                 gpt_dict_response = extract_json(
-                    gpt_text_response.replace("'", '"').replace("None", "null")
+                    gpt_text_response.replace("None", "null")
                 )
                 success = True
             except:
@@ -170,7 +170,7 @@ class InitGPTExecute(BaseTool):
         print(gpt_text_response)
 
         gpt_dict_response = extract_json(
-            gpt_text_response.replace("'", '"').replace("None", "null")
+            gpt_text_response.replace("None", "null")
         )
         name_mapping = gpt_dict_response["Mapping results"]
 
