@@ -81,7 +81,8 @@ def export_supporter(state, obj_name, export_path):
             # Save only the remaining object
             bpy.ops.wm.save_as_mainfile(filepath=export_path)
 
-            candidate = "~/workspace/SceneWeaver/record_files/obj.blend"
+            save_dir = os.getenv("save_dir")
+            candidate = os.path.join(save_dir, "record_files", "obj.blend")
             bpy.ops.wm.save_as_mainfile(
                 filepath=candidate, check_existing=False, compress=False, copy=True
             )

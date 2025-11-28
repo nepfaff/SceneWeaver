@@ -67,7 +67,7 @@ class SceneDesigner:
         InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
     )
     available_tools1 = ToolCollection(
-        AddAcdcExecute(),
+        # AddAcdcExecute(),  # Disabled - ACDC tool for 3D reconstruction from images
         AddGPTExecute(),
         AddCrowdExecute(),
         AddRelationExecute(),

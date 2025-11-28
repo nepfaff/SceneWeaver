@@ -1,0 +1,13 @@
+xformers
+shapely
+open3d
+Pillow
+fpsample
+openai
+imageio
+huggingface_hub==0.25.2
+scikit-image
+compress_json
+compress_pickle
+open_clip_torch
+sentence-transformers

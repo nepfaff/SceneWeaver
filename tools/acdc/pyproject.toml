@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools", "numpy", "Cython"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "digital-cousins"
+readme = "README.md"
+description = "ACDC: Automated Creation of Digital Cousins for Robust Policy Learning"
+version = "0.0.1"
+requires-python = "==3.10.*"
+
+dependencies = [
+    # Blender as Python package (no system Blender needed)
+    "bpy==3.6.0",
+
+    # Core dependencies
+    "numpy<2",
+    "Pillow",
+    "imageio",
+    "scipy",
+    "trimesh",
+    "shapely",
+    "open3d",
+    "scikit-image",
+
+    # ML/Vision dependencies
+    "torch",
+    "torchvision",
+    "xformers",
+    "timm",
+    "einops",
+
+    # CLIP and embeddings
+    "open_clip_torch",
+    "sentence-transformers",
+
+    # OpenAI/LLM
+    "openai>=1.0.0",
+
+    # HuggingFace
+    "huggingface_hub>=0.25.0",
+    "transformers",
+
+    # Holodeck/Objaverse retrieval
+    "objathor>=0.0.8",
+    "compress_json",
+    "compress_pickle",
+
+    # Point cloud processing
+    "fpsample",
+
+    # FCL for collision detection (used by trimesh)
+    "python-fcl",
+    "rtree",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["digital_cousins*"]
+
+[tool.uv]
+# Install bpy from Blender's official PyPI repository
+find-links = ["https://download.blender.org/pypi/bpy/"]

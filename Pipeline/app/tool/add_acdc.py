@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 
 from gpt import GPT4
 
@@ -7,6 +8,19 @@ from app.prompt.acdc_cand import system_prompt, user_prompt
 from app.tool.base import BaseTool
 from app.tool.update_infinigen import update_infinigen
 from app.utils import extract_json
+
+# Get SceneWeaver root directory
+_SCENEWEAVER_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+
+def get_acdc_dir() -> str:
+    """Get ACDC directory - defaults to tools/acdc within SceneWeaver."""
+    return os.getenv("ACDC_DIR", os.path.join(_SCENEWEAVER_DIR, "tools", "acdc"))
+
+
+def get_sd35_dir() -> str:
+    """Get SD 3.5 directory - defaults to tools/sd3.5 within SceneWeaver."""
+    return os.getenv("SD35_DIR", os.path.join(_SCENEWEAVER_DIR, "tools", "sd3.5"))
 
 DESCRIPTION = """
 Using image generation and 3D reconstruction to add additional objects into the current scene.
@@ -72,9 +86,8 @@ class AddAcdcExecute(BaseTool):
                         # 3 use acdc to reconstruct 3D scene
                         _ = acdc(img_filename, obj_id, info["obj category"])
 
-                        with open(
-                            "~/workspace/digital-cousins/args.json", "r"
-                        ) as f:
+                        acdc_dir = get_acdc_dir()
+                        with open(os.path.join(acdc_dir, "args.json"), "r") as f:
                             j = json.load(f)
                             if j["success"]:
                                 save_dir = os.getenv("save_dir")
@@ -105,8 +118,13 @@ class AddAcdcExecute(BaseTool):
 
 
 def acdc(img_filename, obj_id, category):
-    # objtype = obj_id.split("_")[1:]
-    # objtype = "_".join(objtype)
+    """Run ACDC pipeline to reconstruct 3D scene from image.
+
+    Uses the ACDC venv at tools/acdc/.venv (separate from SceneWeaver's venv
+    due to conflicting dependencies like bpy).
+    """
+    acdc_dir = get_acdc_dir()
+
     j = {
         "obj_id": obj_id,
         "objtype": category.lower(),
@@ -114,21 +132,31 @@ def acdc(img_filename, obj_id, category):
         "success": False,
         "error": "Unknown",
     }
-    with open("~/workspace/Tabletop-Digital-Cousins/args.json", "w") as f:
+
+    args_path = os.path.join(acdc_dir, "args.json")
+    with open(args_path, "w") as f:
         json.dump(j, f, indent=4)
 
-    import subprocess
+    # Get configuration from environment
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    save_dir = os.getenv("save_dir", "")
+    log_file = os.path.join(_SCENEWEAVER_DIR, "Pipeline", "run.log")
 
-    cmd = """
-    source /home/yandan/anaconda3/etc/profile.d/conda.sh
-    conda deactivate
-    cd ~/workspace/Tabletop-Digital-Cousins
-    conda activate acdc2
-    python digital_cousins/pipeline/acdc_pipeline.py --gpt_api_key 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 > ~/workspace/SceneWeaver/Pipeline/run.log 2>&1
-    """
+    # ACDC has its own venv due to conflicting dependencies (bpy, specific torch version)
+    # Use activate_acdc.sh to set up venv AND proper PYTHONPATH for dependencies
+    activate_script = os.path.join(acdc_dir, "activate_acdc.sh")
+
+    # Run ACDC pipeline in its own venv via subprocess
+    # Using source activate_acdc.sh sets up venv + PYTHONPATH for deps like metric_depth
+    # Source ~/.bashrc to get OPENAI_API_KEY and other env vars
+    cmd = f"""
+source ~/.bashrc
+cd "{acdc_dir}"
+source "{activate_script}"
+python digital_cousins/pipeline/acdc_pipeline.py --gpt_api_key "$OPENAI_API_KEY" > "{log_file}" 2>&1
+"""
     subprocess.run(["bash", "-c", cmd])
-    # os.system("bash -i ~/workspace/digital-cousins/run.sh")
-    save_dir = os.getenv("save_dir")
+
     json_name = (
         f"{save_dir}/pipeline/acdc_output/step_3_output/scene_0/scene_0_info.json"
     )
@@ -137,17 +165,20 @@ def acdc(img_filename, obj_id, category):
 
 
 def gen_img_SD(SD_prompt, obj_id, obj_size):
-    # objtype = obj_id.split("_")[1:]
-    # objtype = "_".join(objtype)
-    # SD_prompt = gen_SD_prompt(prompt,objtype,obj_size)
+    """Generate image using Stable Diffusion 3.5."""
+    sd35_dir = get_sd35_dir()
     save_dir = os.getenv("save_dir")
+    save_dir = os.path.abspath(save_dir)  # Convert to absolute path for SD 3.5
     img_filename = f"{save_dir}/pipeline/SD_img.jpg"
+
     j = {"prompt": SD_prompt, "img_savedir": img_filename}
-    with open("~/workspace/sd3.5/prompt.json", "w") as f:
+
+    prompt_path = os.path.join(sd35_dir, "prompt.json")
+    with open(prompt_path, "w") as f:
         json.dump(j, f, indent=4)
 
-    basedir = "~/workspace/sd3.5"
-    os.system(f"bash {basedir}/run.sh")
+    run_script = os.path.join(sd35_dir, "run.sh")
+    os.system(f"bash {run_script}")
 
     return img_filename
 

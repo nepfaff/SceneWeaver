@@ -1,0 +1,14 @@
+verbose: true
+step_1_output_path: /mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_printer_room_1/pipeline/acdc_output/step_1_output/step_1_output_info.json
+step_2_output_path: /mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_printer_room_1/pipeline/acdc_output/step_2_output/step_2_output_info.json
+tabletype: desk
+dataset: holodeck
+n_scenes: 1
+sampling_method: random
+resolve_collision: true
+discard_objs: null
+visualize_scene: true
+visualize_scene_tilt_angle: 0
+visualize_scene_radius: 5
+save_visualization: true
+save_dir: /mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_printer_room_1/pipeline/acdc_output

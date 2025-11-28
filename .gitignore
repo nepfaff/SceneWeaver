@@ -87,3 +87,12 @@ run.log
 
 # uv lock file (optional - can be tracked for reproducibility)
 # uv.lock
+
+# Tools virtual environments and generated files
+tools/*/.venv/
+tools/acdc/checkpoints/
+tools/acdc/deps/
+tools/acdc/output/
+tools/sd3.5/models/
+tools/sd3.5/temp_output/
+tools/sd3.5/prompt.json

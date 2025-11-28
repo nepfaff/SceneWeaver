@@ -65,9 +65,41 @@ The script will:
 - ✅ Create the Python environment with uv
 - ✅ Install all Python dependencies
 - ✅ Download and install Blender 3.6
-- ✅ Clone external tools (SD 3.5, Tabletop Digital Cousins)
 - ✅ Download datasets (3D FUTURE, etc.)
 - ✅ Set up configuration templates
+
+### Setting Up ACDC Tool (Optional)
+
+The ACDC tool (SD 3.5 + Tabletop Digital Cousins) is now **integrated into SceneWeaver** in the `tools/` directory. It requires a **separate virtual environment** due to conflicting dependencies (bpy 3.6.0, specific torch version).
+
+```bash
+# Set up ACDC and SD 3.5 tools (creates separate venvs in tools/)
+bash scripts/setup/setup_tools.sh
+
+# Or set up only one tool
+bash scripts/setup/setup_tools.sh --acdc-only
+bash scripts/setup/setup_tools.sh --sd35-only
+```
+
+**Important:** The tools use separate venvs:
+- `tools/acdc/.venv` - ACDC dependencies (bpy, open3d, etc.)
+- `tools/sd3.5/.venv` - SD 3.5 dependencies (torch, transformers, etc.)
+
+This is because ACDC requires `bpy==3.6.0` which conflicts with SceneWeaver's main environment.
+
+#### SD 3.5 Model Download (Gated)
+
+SD 3.5 models require accepting a license on HuggingFace:
+
+1. Visit: https://huggingface.co/stabilityai/stable-diffusion-3.5-medium
+2. Click "Agree and access repository"
+3. Login to HuggingFace CLI: `huggingface-cli login`
+4. Run the setup script again or manually download:
+   ```bash
+   cd tools/sd3.5
+   source .venv/bin/activate
+   python download_models.py --model medium
+   ```
 
 ### Post-Setup Configuration
 
@@ -93,29 +125,32 @@ Edit `Pipeline/config/config.json`:
 
 #### 2. Configure Available Tools
 
-Edit `Pipeline/app/agent/scenedesigner.py` (lines 66-79) to enable/disable tools based on what you installed:
+Edit `Pipeline/app/agent/scenedesigner.py` (lines 69-79) to enable/disable tools based on what you installed.
 
-**Minimal Setup (default):**
+
+**Minimal Setup (recommended for quick testing):**
 ```python
-available_tools0 = [InitGPTExecute()]  # LLM-based initialization only
-available_tools1 = [                   # Basic modifiers + LLM-based addition
+available_tools0 = ToolCollection(
+    InitGPTExecute()  # LLM-based initialization only
+)
+available_tools1 = ToolCollection(
     AddGPTExecute(),
     UpdateLayoutExecute(),
     UpdateRotationExecute(),
     UpdateSizeExecute(),
     RemoveExecute(),
     Terminate()
-]
+)
 ```
 
-**Full Setup (if you installed SD 3.5 + ACDC):**
+**Full Setup (with SD 3.5 + ACDC and all datasets):**
 ```python
-available_tools0 = [
+available_tools0 = ToolCollection(
     InitGPTExecute(),
     InitMetaSceneExecute(),  # If you have MetaScenes dataset
     InitPhySceneExecute()     # Uses sample data in data/physcene/
-]
-available_tools1 = [
+)
+available_tools1 = ToolCollection(
     AddAcdcExecute(),         # SD 3.5 + Tabletop Digital Cousins
     AddGPTExecute(),
     AddCrowdExecute(),
@@ -125,7 +160,7 @@ available_tools1 = [
     UpdateSizeExecute(),
     RemoveExecute(),
     Terminate()
-]
+)
 ```
 
 #### 3. Verify Environment Paths
@@ -136,11 +171,12 @@ cat .env
 ```
 
 If you need to adjust paths, edit `.env` and update:
-- `WORKSPACE_DIR` - Where external tools and datasets are stored
-- `SD35_DIR` - Path to SD 3.5
-- `ACDC_DIR` - Path to Tabletop Digital Cousins
+- `WORKSPACE_DIR` - Where datasets are stored
 - `FUTURE_3D_DIR` - Path to 3D FUTURE dataset
 - `METASCENES_DIR` - Path to MetaScenes dataset (if available)
+- `HOLODECK_DIR` - Path to Holodeck data (for ACDC object retrieval)
+
+**Note:** ACDC and SD 3.5 are now integrated in `tools/` and don't require separate path configuration.
 
 #### 4. Test Your Setup
 
@@ -216,11 +252,12 @@ You'll see the scene being generated in real-time in the Blender window.
   git submodule update --init --recursive
   ```
 
-**Issue: External tools not found**
-- Solution: Check `.env` file and verify paths are correct. External tools should be in:
-  - `~/workspace/sd3.5/`
-  - `~/workspace/Tabletop-Digital-Cousins/`
-  - Or the custom workspace directory you specified
+**Issue: ACDC tool not working**
+- Solution: ACDC and SD 3.5 are now integrated in `tools/`. Run the setup script:
+  ```bash
+  bash scripts/setup/setup_tools.sh
+  ```
+  This creates separate venvs in `tools/acdc/.venv` and `tools/sd3.5/.venv`.
 
 **Issue: Out of memory**
 - Solution: Reduce scene complexity or use fewer objects. LLM-based tools (minimal setup) use less memory than SD+ACDC.
@@ -285,7 +322,7 @@ More details can refer to [official repo of Infinigen](https://github.com/prince
 | `init_metascene` | ❌ Requires external data | Needs MetaScene dataset (not included) |
 | `init_physcene` | ✅ Works | Uses sample data in `data/physcene/` |
 | `add_gpt` | ✅ Works | Add objects using GPT |
-| `add_acdc` | ❌ Requires external systems | Needs SD 3.5 + ACDC (not included) |
+| `add_acdc` | ✅ Works (with setup) | Run `bash scripts/setup/setup_tools.sh` |
 | `add_crowd` | ✅ Works | Add crowded placement using GPT |
 | `add_relation` | ✅ Works | Add explicit relations between objects |
 | `update_layout` | ✅ Works | Update object positions |
@@ -297,12 +334,12 @@ More details can refer to [official repo of Infinigen](https://github.com/prince
 You can expand the framework to other tools (such as architecture, Text-2-3D) as needed.
 Modify `available_tools0` and `available_tools1` in [Pipeline/app/agent/scenedesigner.py](Pipeline/app/agent/scenedesigner.py#L67) to configure which tools are available.
 
-### Unavailable Tools - External Dependencies
+### Tools Requiring Additional Setup
 
-These tools require external datasets/systems from the original authors that are not included in this repository:
+Some tools require additional setup beyond the base installation:
 
-- **`init_metascene`**: Requires MetaScene dataset at `/mnt/fillipo/yandan/metascene/`
-- **`add_acdc`**: Requires [SD 3.5](https://github.com/Scene-Weaver/sd3.5) + [Tabletop Digital Cousins](https://github.com/Scene-Weaver/Tabletop-Digital-Cousins) + conda environment
+- **`init_metascene`**: Requires MetaScene dataset (not included in this repository)
+- **`add_acdc`**: **Now integrated!** Run `bash scripts/setup/setup_tools.sh` to set up SD 3.5 and ACDC with their separate virtual environments
 
 ### Working Tools by Category
 
@@ -312,7 +349,7 @@ These tools require external datasets/systems from the original authors that are
 - [x] Model: PhyScene/DiffuScene/ATISS (sample data in `data/physcene/`)
 
 **Implementers:**
-- [ ] Visual: SD + Tabletop Digital Cousin (requires external setup)
+- [x] Visual: SD 3.5 + ACDC (integrated in `tools/`, run setup script)
 - [x] LLM: GPT (both sparse & crowded)
 - [x] Rule-based relations
 

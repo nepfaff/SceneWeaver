@@ -20,15 +20,23 @@ download_external_tools() {
         cd ..
     fi
 
-    # 2. Tabletop Digital Cousins
+    # 2. Tabletop Digital Cousins (ACDC)
     print_info "Cloning Tabletop Digital Cousins repository..."
     if [ -d "Tabletop-Digital-Cousins" ]; then
-        print_warning "Tabletop-Digital-Cousins already exists, skipping..."
+        print_warning "Tabletop-Digital-Cousins already exists, skipping clone..."
     else
         git clone https://github.com/Scene-Weaver/Tabletop-Digital-Cousins.git
         print_success "Tabletop Digital Cousins cloned"
-        print_warning "You need to set up the acdc2 conda environment separately"
-        print_info "See: https://github.com/Scene-Weaver/Tabletop-Digital-Cousins for setup instructions"
+    fi
+
+    # Set up ACDC dependencies
+    print_info "Setting up ACDC dependencies (this may take a while)..."
+    local SCENEWEAVER_DIR="$(cd "${WORKSPACE_DIR}/../SceneWeaver" 2>/dev/null && pwd)" || SCENEWEAVER_DIR="$(dirname "$(dirname "$(dirname "${BASH_SOURCE[0]}")")")"
+    if [ -f "${SCENEWEAVER_DIR}/scripts/setup/install_acdc_tool_dependencies.sh" ]; then
+        bash "${SCENEWEAVER_DIR}/scripts/setup/install_acdc_tool_dependencies.sh"
+    else
+        print_warning "ACDC setup script not found at ${SCENEWEAVER_DIR}/scripts/setup/install_acdc_tool_dependencies.sh"
+        print_info "Run it manually: bash scripts/setup/install_acdc_tool_dependencies.sh"
     fi
 
     # 3. IDesign/OpenShape (Optional)
