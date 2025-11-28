@@ -228,6 +228,32 @@ python main.py --prompt "Design me a bedroom." --cnt 1 --basedir ./output/ --soc
 
 You'll see the scene being generated in real-time in the Blender window.
 
+#### Batch Processing (Multiple Scenes)
+
+To generate multiple scenes at once, use the batch script:
+
+```bash
+cd Pipeline
+chmod +x run_batch.sh
+./run_batch.sh
+```
+
+The script includes 5 example prompts. To customize:
+
+1. Open `Pipeline/run_batch.sh` in a text editor
+2. Edit the `prompts` array at the top of the file
+3. Add, remove, or modify prompts as needed
+4. Run the script
+
+Example custom prompts:
+```bash
+prompts=(
+  "A cozy home office with a large desk and ergonomic chair."
+  "A modern kitchen with an island and bar stools."
+  "A minimalist bathroom with a freestanding tub."
+)
+```
+
 ### Troubleshooting
 
 **Issue: "Could not find a version that satisfies the requirement bpy==3.6.0"**
