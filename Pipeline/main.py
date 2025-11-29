@@ -4,16 +4,17 @@ from app.agent.scenedesigner import SceneDesigner
 from app.logger import logger
 
 
-def main(prompt, i, basedir):
+def main(prompt, i, basedir, save_dir=None):
     agent = SceneDesigner()
     try:
-        # prompt = "Design me a bedroom."
-        save_dir = basedir + prompt[
-            :30
-        ].replace(" ", "_").replace(".", "").replace(",", "_").replace("[", "").replace(
-            "]", ""
-        ).replace("'", "").replace('"', "").replace("!", "").replace("?", "")
-        save_dir = save_dir + "_" + str(i)
+        # Use explicit save_dir if provided, otherwise auto-generate from prompt
+        if save_dir is None:
+            save_dir = basedir + prompt[
+                :30
+            ].replace(" ", "_").replace(".", "").replace(",", "_").replace("[", "").replace(
+                "]", ""
+            ).replace("'", "").replace('"', "").replace("!", "").replace("?", "")
+            save_dir = save_dir + "_" + str(i)
         os.makedirs(save_dir, exist_ok=True)
             
 
@@ -44,6 +45,8 @@ if __name__ == "__main__":
                    help='Number of scene to generate. Default is 1')
     parser.add_argument('--basedir', type=str, default="/mnt/fillipo/yandan/scenesage/record_scene/manus/",
                    help='The basic path to save all the generated scenes.')
+    parser.add_argument('--save_dir', type=str, default=None,
+                   help='Explicit save directory (overrides auto-generated name from prompt)')
     parser.add_argument('--socket', type=str, default="False", help='Run with Blender in the foreground')
 
     args = parser.parse_args()
@@ -63,5 +66,5 @@ if __name__ == "__main__":
     for p in prompts:
         for i in range(cnt):
             prompt = p
-            main(prompt, i, basedir)
+            main(prompt, i, basedir, args.save_dir)
             

@@ -230,7 +230,9 @@ You'll see the scene being generated in real-time in the Blender window.
 
 #### Batch Processing (Multiple Scenes)
 
-To generate multiple scenes at once, use the batch script:
+**Option 1: Shell Script (run_batch.sh)**
+
+For quick batch generation with hardcoded prompts:
 
 ```bash
 cd Pipeline
@@ -238,21 +240,44 @@ chmod +x run_batch.sh
 ./run_batch.sh
 ```
 
-The script includes 5 example prompts. To customize:
+Customize by editing the `prompts` array in `Pipeline/run_batch.sh`.
 
-1. Open `Pipeline/run_batch.sh` in a text editor
-2. Edit the `prompts` array at the top of the file
-3. Add, remove, or modify prompts as needed
-4. Run the script
+**Option 2: CSV-based Script (run_from_csv.py)**
 
-Example custom prompts:
+For more control over scene selection and output naming:
+
 ```bash
-prompts=(
-  "A cozy home office with a large desk and ergonomic chair."
-  "A modern kitchen with an island and bar stools."
-  "A minimalist bathroom with a freestanding tub."
-)
+cd Pipeline
+source ../.venv/bin/activate
+
+# Run all prompts from CSV
+python run_from_csv.py
+
+# Run prompts 0-2 (inclusive)
+python run_from_csv.py --start_id 0 --end_id 2
+
+# Run specific prompts by ID
+python run_from_csv.py --indices "0,2,4"
+
+# Custom CSV file and output directory
+python run_from_csv.py --csv_file /path/to/prompts.csv --results_dir ./my_output
 ```
+
+**Arguments:**
+- `--csv_file`: Path to CSV file (default: `/home/ubuntu/SceneWeaver/prompts.csv`)
+- `--results_dir`: Output directory (default: `./output`)
+- `--start_id`: Start from this ID (inclusive)
+- `--end_id`: End at this ID (inclusive)
+- `--indices`: Comma-separated list of IDs (e.g., "0,2,5")
+
+**CSV Format:**
+```csv
+ID,Description,Difficulty
+0,"A kid's bedroom with a pastel pink twin bed...",medium
+1,"A contemporary living room with a leather sofa...",medium
+```
+
+Output is saved as `scene_000`, `scene_001`, etc. based on the CSV ID.
 
 ### Troubleshooting
 
