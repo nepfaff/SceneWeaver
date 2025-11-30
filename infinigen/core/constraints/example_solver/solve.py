@@ -1920,6 +1920,10 @@ class Solver:
                 -(math.radians(value["rotation"]["z_angle"]) + math.pi) - math.pi / 2
             )
             # asset_file = f"{asset_dir}/{key}.glb"
+            # Check if category has assets available
+            if category not in self.LoadObjavFiles or not self.LoadObjavFiles[category]:
+                print(f"Warning: No assets found for category '{category}', skipping...")
+                continue
             asset_file = self.LoadObjavFiles[category][0]
 
             gen_class = GeneralObjavFactory
@@ -2035,6 +2039,10 @@ class Solver:
             # position[2] = position[2] - z_dim / 2 + 0.14
             position[2] = position[2] + 0.14
             rotation = math.radians(value["rotation"]["z_angle"])  # + math.pi
+            # Check if category has assets available
+            if category not in self.LoadObjavFiles or not self.LoadObjavFiles[category]:
+                print(f"Warning: No assets found for category '{category}', skipping...")
+                continue
             asset_file = self.LoadObjavFiles[category][0]
 
             gen_class = GeneralObjavFactory
@@ -2233,6 +2241,10 @@ class Solver:
             position = [position["x"] + 0.14, position["y"] + 0.14, position["z"]]
             position[2] = position[2] - z_dim / 2 + 0.14
             rotation = math.radians(value["rotation"]["z_angle"])  # + math.pi
+            # Check if category has assets available
+            if category not in self.LoadObjavFiles or not self.LoadObjavFiles[category]:
+                print(f"Warning: No assets found for category '{category}', skipping...")
+                continue
             asset_file = self.LoadObjavFiles[category][0]
 
             gen_class = GeneralObjavFactory
@@ -2350,6 +2362,10 @@ class Solver:
             position = [position["x"] + 0.14, position["z"] + 0.14, position["y"]]
             position[2] = position[2] - z_dim / 2 + 0.14
             rotation = math.radians(90 - value["rotation"]["z_angle"])  # + math.pi
+            # Check if category has assets available
+            if category not in self.LoadObjavFiles or not self.LoadObjavFiles[category]:
+                print(f"Warning: No assets found for category '{category}', skipping...")
+                continue
             asset_file = self.LoadObjavFiles[category][0]
 
             gen_class = GeneralObjavFactory

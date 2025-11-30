@@ -2,6 +2,7 @@ import base64
 import json
 import math
 import random
+import re
 from typing import Any, Dict
 
 # def extract_json(input_string):
@@ -42,7 +43,9 @@ def extract_json(input_string):
             break
     if not json_string:
         raise ValueError("No valid JSON found in the input string.")
-    # Step 2: Convert the JSON string to a dictionary
+    # Step 2: Strip JavaScript-style // comments that GPT sometimes adds
+    json_string = re.sub(r'//[^\n]*', '', json_string)
+    # Step 3: Convert the JSON string to a dictionary
     try:
         json_dict = json.loads(json_string)
         return json_dict
