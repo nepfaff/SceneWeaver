@@ -103,9 +103,12 @@ def main():
         print(f"\n[{i+1}/{total}] Scene {prompt_id}: {description[:50]}...")
         print("-" * 60)
 
+        # Use venv Python to ensure correct environment
+        venv_python = project_dir / ".venv" / "bin" / "python"
+
         # Run main.py with explicit save_dir
         cmd = [
-            "python",
+            str(venv_python),
             "main.py",
             "--prompt",
             description,

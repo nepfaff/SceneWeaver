@@ -20,12 +20,17 @@ import re
 import sys
 from pathlib import Path
 
-# Try different possible data locations
+# Holodeck data paths
+HOLODECK_BASE = os.path.expanduser("~/workspace/Holodeck/data/2023_09_23")
+HOLODECK_ANNOTATIONS_PATH = os.path.join(HOLODECK_BASE, "annotations.json.gz")
+HOLODECK_ASSETS_DIR = os.path.join(HOLODECK_BASE, "assets")
+
+# Try different possible data locations (Holodeck first for full 50k dataset)
 POSSIBLE_DATA_DIRS = [
     os.environ.get("OBJATHOR_ASSETS_DIR", ""),
+    HOLODECK_ASSETS_DIR,  # Full 50k dataset
     os.path.expanduser("~/SceneEval/_data/layoutvlm-objathor"),
     os.path.expanduser("~/.objathor-assets/objathor-assets"),
-    os.path.expanduser("~/workspace/Holodeck/data/2023_09_23/assets"),
     "/home/ubuntu/SceneEval/_data/layoutvlm-objathor",
 ]
 
@@ -39,10 +44,51 @@ def find_data_dir():
 
 
 def load_annotations(data_dir):
-    """Load category annotations from all assets."""
+    """Load category annotations from all assets.
+
+    First tries to load from centralized annotations.json.gz (Holodeck format),
+    then falls back to per-folder scanning (layoutvlm format).
+    """
     annotations = {}
     data_path = Path(data_dir)
 
+    # Try centralized annotations.json.gz first (Holodeck format with 50k assets)
+    # Check both the configured path and relative to data_dir
+    centralized_paths = [
+        HOLODECK_ANNOTATIONS_PATH,
+        os.path.join(os.path.dirname(data_dir), "annotations.json.gz"),
+    ]
+
+    for annotations_path in centralized_paths:
+        if os.path.exists(annotations_path):
+            print(f"Loading centralized annotations from: {annotations_path}")
+            try:
+                with gzip.open(annotations_path, "rt") as f:
+                    all_annotations = json.load(f)
+
+                loaded_count = 0
+                for uid, info in all_annotations.items():
+                    if not isinstance(info, dict):
+                        continue
+                    # Build GLB path - assets are in {data_dir}/{uid}/{uid}.glb
+                    glb_path = os.path.join(data_dir, uid, f"{uid}.glb")
+                    if os.path.exists(glb_path):
+                        annotations[uid] = {
+                            "category": info.get("category", "").lower(),
+                            "description": info.get("description", ""),
+                            "glb_path": glb_path,
+                        }
+                        loaded_count += 1
+
+                if loaded_count > 0:
+                    print(f"Loaded {loaded_count} assets from centralized annotations")
+                    return annotations
+            except Exception as e:
+                print(f"Warning: Failed to load centralized annotations: {e}")
+                continue
+
+    # Fall back to per-folder scanning (layoutvlm format)
+    print("Falling back to per-folder annotation scanning...")
     for asset_dir in data_path.iterdir():
         if not asset_dir.is_dir():
             continue
@@ -70,7 +116,7 @@ def load_annotations(data_dir):
                 print(f"Warning: Failed to load {data_json}: {e}")
                 continue
 
-        # Try to load annotations.json.gz (objathor format)
+        # Try to load annotations.json.gz (per-folder objathor format)
         elif (asset_dir / "annotations.json.gz").exists():
             try:
                 with gzip.open(asset_dir / "annotations.json.gz", "rt") as f:
@@ -106,7 +152,7 @@ def find_matching_assets(query_category, annotations, top_k=5):
     matches = []
     for asset_id, info in annotations.items():
         category = info["category"]
-        description = info.get("description", "").lower()
+        description = (info.get("description") or "").lower()
 
         # Exact category match
         if category == query:
