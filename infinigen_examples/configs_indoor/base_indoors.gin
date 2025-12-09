@@ -40,7 +40,8 @@ group_collections.config = [
 ]
 
 configure_render_cycles.exposure = 3
-configure_render_cycles.denoise = False
+configure_render_cycles.denoise = True
+configure_render_cycles.num_samples = 50
 configure_render_cycles.adaptive_threshold = 0.005
 
 nishita_lighting.strength = 0.25

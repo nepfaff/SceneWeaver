@@ -64,7 +64,7 @@ class SceneDesigner:
 
     # Add general-purpose tools to the tool collection
     available_tools0 = ToolCollection(
-        InitGPTExecute(), #InitMetaSceneExecute(), InitPhySceneExecute()
+        InitPhySceneExecute(),  # Force physcene for testing 3D-FUTURE
     )
     available_tools1 = ToolCollection(
         # AddAcdcExecute(),  # Disabled - ACDC tool for 3D reconstruction from images

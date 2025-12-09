@@ -48,6 +48,19 @@ from . import moves, propose_relations, state_def
 from .annealing import SimulatedAnnealingSolver
 from .room import MultistoryRoomSolver, RoomSolver
 
+
+def transform_3dfuture_path(original_path: str) -> str:
+    """Transform hardcoded 3D-FUTURE paths to use FUTURE_3D_DIR env var."""
+    future_3d_dir = os.getenv("FUTURE_3D_DIR")
+    if future_3d_dir and "3D-FUTURE" in original_path:
+        # Extract UUID from path like .../3D-FUTURE-model/[UUID]/raw_model.obj
+        parts = original_path.split("/")
+        for i, part in enumerate(parts):
+            if "3D-FUTURE" in part and i + 1 < len(parts):
+                uuid = parts[i + 1]
+                return os.path.join(future_3d_dir, uuid, "raw_model.obj")
+    return original_path
+
 # from infinigen_examples.steps.tools import calc_position_bias
 
 
@@ -1490,7 +1503,7 @@ class Solver:
 
                 gen_class = copy.deepcopy(GeneralThreedFrontFactory)
                 gen_class._category = category
-                gen_class._asset_file = obj_info["path"]
+                gen_class._asset_file = transform_3dfuture_path(obj_info["path"])
                 gen_class._scale = scale
                 gen_class._rotation = rotation
                 gen_class._position = position
@@ -1526,7 +1539,7 @@ class Solver:
                         a = 1
                     # target_name = np.random.randint(1e7)+"_SofaFactory"
 
-                    asset_file = obj_info["path"]
+                    asset_file = transform_3dfuture_path(obj_info["path"])
 
                     move.apply_init(
                         self.state,
@@ -2131,7 +2144,7 @@ class Solver:
 
                 gen_class = copy.deepcopy(GeneralThreedFrontFactory)
                 gen_class._category = category
-                gen_class._asset_file = obj_info["path"]
+                gen_class._asset_file = transform_3dfuture_path(obj_info["path"])
                 gen_class._scale = scale
                 gen_class._rotation = rotation
                 gen_class._position = position
@@ -2167,7 +2180,7 @@ class Solver:
                 while target_name in self.state.objs:
                     target_name = f"{np.random.randint(1e7)}_{class_name}"
 
-                asset_file = obj_info["path"]
+                asset_file = transform_3dfuture_path(obj_info["path"])
 
                 move.apply_init(
                     self.state,

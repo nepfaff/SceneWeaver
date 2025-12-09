@@ -66,11 +66,13 @@ def update_infinigen(
     )
 
     # # if invisible:
-    sw_dir = os.getenv("sceneweaver_dir")
+    sw_dir = os.getenv("SCENEWEAVER_DIR")
     socket = os.getenv("socket")
     if action == "export_supporter" or socket=="False":
         # if True:
         cmd = f"""
+        # Override LD_LIBRARY_PATH to use SceneWeaver's bpy libs exclusively
+        export LD_LIBRARY_PATH="{sw_dir}/.venv/lib/python3.10/site-packages/bpy/lib"
         source {sw_dir}/.venv/bin/activate
         cd {sw_dir}
         python -m infinigen_examples.generate_indoors --seed 0 --save_dir {save_dir} --task coarse --output_folder outputs/indoors/coarse_expand_whole_nobedframe -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False compose_indoors.invisible_room_ceilings_enabled=True > {sw_dir}/run.log 2>&1
