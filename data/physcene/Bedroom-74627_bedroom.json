@@ -2,7 +2,7 @@
     "ThreedFront": {
         "307dec24-4beb-4d07-8b06-d2c715a7b1a5": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/307dec24-4beb-4d07-8b06-d2c715a7b1a5/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/307dec24-4beb-4d07-8b06-d2c715a7b1a5/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -33,7 +33,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/307dec24-4beb-4d07-8b06-d2c715a7b1a5/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/307dec24-4beb-4d07-8b06-d2c715a7b1a5/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -66,7 +66,7 @@
         ],
         "b9db14f3-27a1-4325-b212-9bf82352d66c": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/b9db14f3-27a1-4325-b212-9bf82352d66c/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/b9db14f3-27a1-4325-b212-9bf82352d66c/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -97,7 +97,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/b9db14f3-27a1-4325-b212-9bf82352d66c/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/b9db14f3-27a1-4325-b212-9bf82352d66c/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -130,7 +130,7 @@
         ],
         "2ec84a37-8444-4362-9369-c56451e4ae1a": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/2ec84a37-8444-4362-9369-c56451e4ae1a/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/2ec84a37-8444-4362-9369-c56451e4ae1a/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -163,7 +163,7 @@
         ],
         "82952d41-00e4-46ea-b5a5-dad51f22107e": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/82952d41-00e4-46ea-b5a5-dad51f22107e/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/82952d41-00e4-46ea-b5a5-dad51f22107e/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -196,7 +196,7 @@
         ],
         "75bf62b4-3a67-44ca-aa9c-72944e3817a0": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/75bf62b4-3a67-44ca-aa9c-72944e3817a0/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/75bf62b4-3a67-44ca-aa9c-72944e3817a0/raw_model.obj",
                 "scale": [
                     1,
                     1,

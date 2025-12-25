@@ -21,6 +21,11 @@ import subprocess
 import os
 from pathlib import Path
 
+# Set SCENEWEAVER_DIR before any subprocess calls
+SCRIPT_DIR = Path(__file__).parent.resolve()
+PROJECT_DIR = SCRIPT_DIR.parent
+os.environ["SCENEWEAVER_DIR"] = str(PROJECT_DIR)
+
 CSV_FILE = str(Path.home() / "SceneEval/input/annotations.csv")
 RESULTS_DIR = "./output/sceneeval"
 

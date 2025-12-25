@@ -2,7 +2,7 @@
     "ThreedFront": {
         "b2e16c0c-b9e4-4eba-b911-cc53c2d697fd": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/b2e16c0c-b9e4-4eba-b911-cc53c2d697fd/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/b2e16c0c-b9e4-4eba-b911-cc53c2d697fd/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -35,7 +35,7 @@
         ],
         "efc0ad60-ff78-43c4-b824-f347c3f2cbad": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/efc0ad60-ff78-43c4-b824-f347c3f2cbad/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/efc0ad60-ff78-43c4-b824-f347c3f2cbad/raw_model.obj",
                 "scale": [
                     0.9784396802800723,
                     1.0,
@@ -66,7 +66,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/efc0ad60-ff78-43c4-b824-f347c3f2cbad/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/efc0ad60-ff78-43c4-b824-f347c3f2cbad/raw_model.obj",
                 "scale": [
                     0.9784396802800723,
                     1.0,
@@ -97,7 +97,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/efc0ad60-ff78-43c4-b824-f347c3f2cbad/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/efc0ad60-ff78-43c4-b824-f347c3f2cbad/raw_model.obj",
                 "scale": [
                     0.9784396802800723,
                     1.0,
@@ -128,7 +128,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/efc0ad60-ff78-43c4-b824-f347c3f2cbad/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/efc0ad60-ff78-43c4-b824-f347c3f2cbad/raw_model.obj",
                 "scale": [
                     0.9784396802800723,
                     1.0,
@@ -161,7 +161,7 @@
         ],
         "8cb61cda-3cc3-43a3-a845-85ab017a97a5": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/8cb61cda-3cc3-43a3-a845-85ab017a97a5/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/8cb61cda-3cc3-43a3-a845-85ab017a97a5/raw_model.obj",
                 "scale": [
                     0.9975161287626153,
                     1.0,
@@ -192,7 +192,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/8cb61cda-3cc3-43a3-a845-85ab017a97a5/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/8cb61cda-3cc3-43a3-a845-85ab017a97a5/raw_model.obj",
                 "scale": [
                     0.9975161287626153,
                     1.0,
@@ -225,7 +225,7 @@
         ],
         "0076eaf7-105e-4df1-b6d0-d0d5fd15f576": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/0076eaf7-105e-4df1-b6d0-d0d5fd15f576/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/0076eaf7-105e-4df1-b6d0-d0d5fd15f576/raw_model.obj",
                 "scale": [
                     1.0064318875591771,
                     1.0,
@@ -258,7 +258,7 @@
         ],
         "9582f63c-7e72-44c6-9373-3e229f9ff7ef": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/9582f63c-7e72-44c6-9373-3e229f9ff7ef/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/9582f63c-7e72-44c6-9373-3e229f9ff7ef/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -291,7 +291,7 @@
         ],
         "2ad51dfc-9e9e-492b-b053-6e6373a9a2aa": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/2ad51dfc-9e9e-492b-b053-6e6373a9a2aa/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/2ad51dfc-9e9e-492b-b053-6e6373a9a2aa/raw_model.obj",
                 "scale": [
                     1.3983999758350607,
                     1.0,
@@ -322,7 +322,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/2ad51dfc-9e9e-492b-b053-6e6373a9a2aa/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/2ad51dfc-9e9e-492b-b053-6e6373a9a2aa/raw_model.obj",
                 "scale": [
                     1.3983999758350607,
                     1.0,
@@ -355,7 +355,7 @@
         ],
         "b50f317e-90f0-4c62-81fb-d41f426b94e5": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/b50f317e-90f0-4c62-81fb-d41f426b94e5/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/b50f317e-90f0-4c62-81fb-d41f426b94e5/raw_model.obj",
                 "scale": [
                     0.63608936343248,
                     1.0,
@@ -388,7 +388,7 @@
         ],
         "79b5982a-1302-4080-9cab-306c8e3e337e": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/79b5982a-1302-4080-9cab-306c8e3e337e/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/79b5982a-1302-4080-9cab-306c8e3e337e/raw_model.obj",
                 "scale": [
                     1.4104618805698215,
                     1.0,
@@ -421,7 +421,7 @@
         ],
         "1142855b-0ce2-4c2c-ac44-d87f7983be0f": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/1142855b-0ce2-4c2c-ac44-d87f7983be0f/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/1142855b-0ce2-4c2c-ac44-d87f7983be0f/raw_model.obj",
                 "scale": [
                     1.9895710112368563,
                     1.0,

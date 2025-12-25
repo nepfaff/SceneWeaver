@@ -59,7 +59,7 @@ if __name__ == "__main__":
     current_file_path = os.path.abspath(__file__)
     current_dir = os.path.dirname(current_file_path)
     parent_dir = os.path.dirname(current_dir)
-    os.environ["sceneweaver_dir"] = parent_dir
+    os.environ["SCENEWEAVER_DIR"] = parent_dir
     # cnt = 3
     # prompts = ["Design me a baby room."]
 

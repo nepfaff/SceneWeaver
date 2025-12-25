@@ -2,7 +2,7 @@
     "ThreedFront": {
         "6cefa84c-81f8-424a-8da2-9965c1cc742d": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/6cefa84c-81f8-424a-8da2-9965c1cc742d/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/6cefa84c-81f8-424a-8da2-9965c1cc742d/raw_model.obj",
                 "scale": [
                     1.0986195439877715,
                     1.0,
@@ -33,7 +33,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/6cefa84c-81f8-424a-8da2-9965c1cc742d/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/6cefa84c-81f8-424a-8da2-9965c1cc742d/raw_model.obj",
                 "scale": [
                     1.0986195439877715,
                     1.0,
@@ -64,7 +64,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/6cefa84c-81f8-424a-8da2-9965c1cc742d/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/6cefa84c-81f8-424a-8da2-9965c1cc742d/raw_model.obj",
                 "scale": [
                     1.0986195439877715,
                     1.0,
@@ -95,7 +95,7 @@
                 ]
             },
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/6cefa84c-81f8-424a-8da2-9965c1cc742d/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/6cefa84c-81f8-424a-8da2-9965c1cc742d/raw_model.obj",
                 "scale": [
                     1.0986195439877715,
                     1.0,
@@ -128,7 +128,7 @@
         ],
         "03e769ca-8083-4bc3-bd90-f0f793b5aff8": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/03e769ca-8083-4bc3-bd90-f0f793b5aff8/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/03e769ca-8083-4bc3-bd90-f0f793b5aff8/raw_model.obj",
                 "scale": [
                     1,
                     1,
@@ -161,7 +161,7 @@
         ],
         "606addac-1451-4150-8b84-70b99864db9a": [
             {
-                "path": "/home/yandan/dataset/3D-scene/3D-FUTURE-model/606addac-1451-4150-8b84-70b99864db9a/raw_model.obj",
+                "path": "/home/ubuntu/workspace/datasets/3D-FUTURE/3D-FUTURE-model/606addac-1451-4150-8b84-70b99864db9a/raw_model.obj",
                 "scale": [
                     1,
                     1,
