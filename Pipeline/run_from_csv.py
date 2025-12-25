@@ -21,8 +21,8 @@ import subprocess
 import os
 from pathlib import Path
 
-CSV_FILE = "/home/ubuntu/SceneWeaver/prompts.csv"
-RESULTS_DIR = "./output"
+CSV_FILE = str(Path.home() / "SceneEval/input/annotations.csv")
+RESULTS_DIR = "./output/sceneeval"
 
 
 def main():
