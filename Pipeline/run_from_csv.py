@@ -27,7 +27,7 @@ PROJECT_DIR = SCRIPT_DIR.parent
 os.environ["SCENEWEAVER_DIR"] = str(PROJECT_DIR)
 
 CSV_FILE = str(Path.home() / "SceneEval/input/annotations.csv")
-RESULTS_DIR = "./output/sceneeval"
+RESULTS_DIR = "~/efs/nicholas/scene-agent-eval-scenes/SceneWeaver/"
 
 
 def main():
@@ -79,7 +79,7 @@ def main():
     # Setup paths
     script_dir = Path(__file__).parent.resolve()
     project_dir = script_dir.parent
-    results_dir = Path(args.results_dir)
+    results_dir = Path(args.results_dir).expanduser()
     if not results_dir.is_absolute():
         results_dir = script_dir / results_dir
     results_dir.mkdir(parents=True, exist_ok=True)
