@@ -271,15 +271,29 @@ class SceneDesigner:
                         # If this is a tool response, ensure parent assistant is included
                         if hasattr(msg, 'role') and msg.role == 'tool':
                             # Look backward for parent assistant with tool_calls
-                            for j in range(orig_idx - 1, 0, -1):
+                            parent_found = False
+                            for j in range(orig_idx - 1, -1, -1):
                                 parent = self.messages[j]
                                 if hasattr(parent, 'tool_calls') and parent.tool_calls:
                                     if parent not in messages:
                                         messages.append(parent)
+                                    parent_found = True
                                     break
+                            if not parent_found:
+                                # Skip orphaned tool message - can't include without parent
+                                continue
                         messages.append(msg)
                 else:
-                    messages = self.messages
+                    # Even for small message lists, ensure no orphaned tool messages
+                    messages = []
+                    for i, msg in enumerate(self.messages):
+                        if hasattr(msg, 'role') and msg.role == 'tool':
+                            # Check if previous message has tool_calls
+                            if i > 0 and hasattr(self.messages[i-1], 'tool_calls') and self.messages[i-1].tool_calls:
+                                messages.append(msg)
+                            # else skip orphaned tool message
+                        else:
+                            messages.append(msg)
                 # messages = self.messages[:2]
                 # Get response with tool options
                 response = self.llm.ask_tool(
