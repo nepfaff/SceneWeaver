@@ -100,10 +100,10 @@ class InitPhySceneExecute(BaseTool):
         if roomtype.endswith("room"):
             roomtype = roomtype[:-4].strip()
         basedir = os.path.join(os.path.dirname(__file__), "../../../data/physcene/")
-        files = os.listdir(basedir)
+        files = [f for f in os.listdir(basedir) if f.endswith(".json")]
         random.shuffle(files)
         for filename in files:
-            if filename.endswith(".json") and roomtype in filename.lower():
+            if roomtype in filename.lower():
                 break
 
         json_name = f"{basedir}/{filename}"

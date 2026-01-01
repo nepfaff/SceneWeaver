@@ -19,6 +19,7 @@ import csv
 import os
 import subprocess
 import sys
+from datetime import datetime
 from multiprocessing import Pool, current_process
 from pathlib import Path
 
@@ -37,15 +38,18 @@ def is_scene_complete(results_dir: Path, scene_id: int) -> bool:
     return render_file.exists()
 
 
+def timestamp():
+    """Return current timestamp string."""
+    return datetime.now().strftime("%H:%M:%S")
+
+
 def process_scene(args: tuple) -> tuple:
-    """Process a single scene. Returns (scene_id, success)."""
-    scene_id, description, results_dir = args
+    """Process a single scene with retries. Returns (scene_id, success)."""
+    scene_id, description, results_dir, max_retries = args
     worker_name = current_process().name
 
     save_dir = results_dir / f"scene_{scene_id:03d}"
     venv_python = PROJECT_DIR / ".venv" / "bin" / "python"
-
-    print(f"[{worker_name}] Starting scene {scene_id}: {description[:50]}...")
 
     cmd = [
         str(venv_python),
@@ -58,14 +62,22 @@ def process_scene(args: tuple) -> tuple:
         "1",
     ]
 
-    result = subprocess.run(cmd, cwd=SCRIPT_DIR, capture_output=True, text=True)
+    for attempt in range(1, max_retries + 1):
+        print(f"[{timestamp()}] [{worker_name}] Starting scene {scene_id} (attempt {attempt}/{max_retries}): {description[:50]}...")
 
-    if result.returncode != 0:
-        print(f"[{worker_name}] Scene {scene_id} FAILED (code {result.returncode})")
-        return (scene_id, False)
+        result = subprocess.run(cmd, cwd=SCRIPT_DIR, capture_output=True, text=True)
 
-    print(f"[{worker_name}] Scene {scene_id} completed successfully")
-    return (scene_id, True)
+        if result.returncode == 0:
+            print(f"[{timestamp()}] [{worker_name}] Scene {scene_id} completed successfully")
+            return (scene_id, True)
+
+        print(f"[{timestamp()}] [{worker_name}] Scene {scene_id} FAILED (code {result.returncode})")
+
+        if attempt < max_retries:
+            print(f"[{timestamp()}] [{worker_name}] Retrying scene {scene_id}...")
+
+    print(f"[{timestamp()}] [{worker_name}] Scene {scene_id} FAILED after {max_retries} attempts")
+    return (scene_id, False)
 
 
 def main():
@@ -106,6 +118,12 @@ def main():
         "--no_skip_existing",
         action="store_true",
         help="Process all scenes, even if already complete",
+    )
+    parser.add_argument(
+        "--max_retries",
+        type=int,
+        default=3,
+        help="Maximum retries per failed scene (default: 3)",
     )
     args = parser.parse_args()
 
@@ -149,12 +167,13 @@ def main():
     print("SceneWeaver Multi-Worker Batch Generator")
     print("=" * 60)
     print(f"Workers: {args.num_workers}")
+    print(f"Max retries: {args.max_retries}")
     print(f"Scenes to process: {len(scenes)}")
     print(f"Output: {results_dir}")
     print("=" * 60)
 
     # Prepare work items
-    work_items = [(scene_id, desc, results_dir) for scene_id, desc in scenes]
+    work_items = [(scene_id, desc, results_dir, args.max_retries) for scene_id, desc in scenes]
 
     # Process in parallel
     with Pool(processes=args.num_workers) as pool:
