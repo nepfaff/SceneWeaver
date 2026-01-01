@@ -77,7 +77,12 @@ blends
 
 process_mesh
 worldgen
-Pipeline/key.txt
+# API keys and secrets
+**/key.txt
+.env
+.env.*
+!.env.example
+
 .venv
 
 # Pipeline outputs

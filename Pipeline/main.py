@@ -33,6 +33,12 @@ def main(prompt, i, basedir, save_dir=None):
         logger.info("Request processing completed.")
     except KeyboardInterrupt:
         logger.warning("Operation interrupted.")
+    except Exception as e:
+        logger.error(f"Scene generation failed: {e}")
+        import traceback
+        traceback.print_exc()
+        import sys
+        sys.exit(1)
 
 
 if __name__ == "__main__":

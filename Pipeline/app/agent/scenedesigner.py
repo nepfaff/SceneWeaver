@@ -263,7 +263,21 @@ class SceneDesigner:
         while True and retry < 3:
             try:
                 if len(self.messages) > 7:
-                    messages = [self.messages[0]] + self.messages[-6:]
+                    # Safe truncation: ensure tool responses have their parent assistant messages
+                    messages = [self.messages[0]]
+                    tail_start = len(self.messages) - 6
+                    for i, msg in enumerate(self.messages[-6:]):
+                        orig_idx = tail_start + i
+                        # If this is a tool response, ensure parent assistant is included
+                        if hasattr(msg, 'role') and msg.role == 'tool':
+                            # Look backward for parent assistant with tool_calls
+                            for j in range(orig_idx - 1, 0, -1):
+                                parent = self.messages[j]
+                                if hasattr(parent, 'tool_calls') and parent.tool_calls:
+                                    if parent not in messages:
+                                        messages.append(parent)
+                                    break
+                        messages.append(msg)
                 else:
                     messages = self.messages
                 # messages = self.messages[:2]
@@ -284,8 +298,11 @@ class SceneDesigner:
                 if self.tool_calls == []:
                     retry += 1
                 else:
-                    if self.current_step > 0:
-                        del self.messages[-2]
+                    if self.current_step > 0 and len(self.messages) >= 2:
+                        # Only delete if it won't orphan a tool response
+                        msg_to_delete = self.messages[-2]
+                        if not (hasattr(msg_to_delete, 'tool_calls') and msg_to_delete.tool_calls):
+                            del self.messages[-2]
                     break
 
             except ValueError:
@@ -415,7 +432,9 @@ class SceneDesigner:
             logger.info(f"🔧 Activating tool: '{name}'...")
             result = self.available_tools.execute(name=name, tool_input=args)
 
-            assert "Error" not in result
+            if "Error" in result:
+                logger.warning(f"Tool '{name}' returned error: {result}")
+                # Continue execution - let the agent decide how to handle
 
             # Handle special tools
             self._handle_special_tool(name=name, result=result)

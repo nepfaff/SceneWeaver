@@ -16,8 +16,12 @@ def send_command(host="localhost", port=12345, command=None):
         client_socket.send(command_json.encode("utf-8"))
 
         # Receive response
-        response = client_socket.recv(1024)
-        response_data = json.loads(response.decode("utf-8"))
+        response = client_socket.recv(4096)  # Larger buffer for complete messages
+        try:
+            response_data = json.loads(response.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            print(f"Invalid response from Blender: {e}, raw bytes: {response[:50]}")
+            return {"success": False, "error": f"Invalid Blender response: {e}"}
 
         print(f"Sent: {command}")
         print(f"Response: {response_data}")
@@ -26,7 +30,7 @@ def send_command(host="localhost", port=12345, command=None):
 
     except Exception as e:
         print(f"Error: {e}")
-        return None
+        return {"success": False, "error": str(e)}
     finally:
         if "client_socket" in locals():
             client_socket.close()
