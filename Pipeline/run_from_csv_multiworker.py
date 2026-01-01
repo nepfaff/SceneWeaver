@@ -17,6 +17,7 @@ Usage:
 import argparse
 import csv
 import os
+import shutil
 import subprocess
 import sys
 from datetime import datetime
@@ -43,6 +44,12 @@ def timestamp():
     return datetime.now().strftime("%H:%M:%S")
 
 
+def clean_scene_dir(save_dir: Path):
+    """Remove partial output from a scene directory to ensure clean retry."""
+    if save_dir.exists():
+        shutil.rmtree(save_dir)
+
+
 def process_scene(args: tuple) -> tuple:
     """Process a single scene with retries. Returns (scene_id, success)."""
     scene_id, description, results_dir, max_retries = args
@@ -63,6 +70,9 @@ def process_scene(args: tuple) -> tuple:
     ]
 
     for attempt in range(1, max_retries + 1):
+        # Clean partial output before each attempt
+        clean_scene_dir(save_dir)
+
         print(f"[{timestamp()}] [{worker_name}] Starting scene {scene_id} (attempt {attempt}/{max_retries}): {description[:50]}...")
 
         result = subprocess.run(cmd, cwd=SCRIPT_DIR, capture_output=True, text=True)
