@@ -29,7 +29,9 @@ def main(prompt, i, basedir, save_dir=None):
             return
 
         logger.warning("Processing your request...")
-        agent.run(prompt)
+        # Get optional max_step_retries from environment
+        max_step_retries = int(os.environ.get("MAX_STEP_RETRIES", "0"))
+        agent.run(prompt, max_step_retries=max_step_retries)
         logger.info("Request processing completed.")
     except KeyboardInterrupt:
         logger.warning("Operation interrupted.")

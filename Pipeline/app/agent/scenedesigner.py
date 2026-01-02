@@ -560,11 +560,12 @@ class SceneDesigner:
 
         return name.lower() in [n.lower() for n in self.special_tool_names]
 
-    def run(self, request: Optional[str] = None) -> str:
+    def run(self, request: Optional[str] = None, max_step_retries: int = 0) -> str:
         """Execute the agent's main loop asynchronously.
 
         Args:
             request: Optional initial user request to process.
+            max_step_retries: Max failures per step before forcing proceed (0=disabled).
 
         Returns:
             A string summarizing the execution results.
@@ -581,6 +582,7 @@ class SceneDesigner:
             self.update_memory("user", request)
 
         results: List[str] = []
+        step_failure_counts: dict = {}  # Track failures per step
 
         self.current_step = 0
         save_dir = os.getenv("save_dir")
@@ -625,18 +627,30 @@ class SceneDesigner:
             )
             step_result = self.step()
             if step_result == "Failed":
-                if self.current_step > 0:
-                    self.current_step -= 1
-                    # If going back to step 0, reset memory to initial state
-                    if self.current_step == 0 and initial_request:
-                        self.memory.clear()
-                        self.update_memory("user", initial_request)
+                # Track failure count for this step
+                step_failure_counts[self.current_step] = step_failure_counts.get(self.current_step, 0) + 1
+                failure_count = step_failure_counts[self.current_step]
+
+                # Check if we should force proceed (skip retry)
+                if max_step_retries > 0 and failure_count >= max_step_retries:
+                    logger.warning(
+                        f"Step {self.current_step} failed {failure_count} times, forcing proceed to next step"
+                    )
+                    # Don't decrement - just continue to let the loop increment and move on
                 else:
-                    # Step 0 failed - reset memory and retry step 0
-                    if initial_request:
-                        self.memory.clear()
-                        self.update_memory("user", initial_request)
-                continue
+                    if self.current_step > 0:
+                        self.current_step -= 1
+                        # If going back to step 0, reset memory to initial state
+                        if self.current_step == 0 and initial_request:
+                            self.memory.clear()
+                            self.update_memory("user", initial_request)
+                    else:
+                        # Step 0 failed - reset memory and retry step 0
+                        if initial_request:
+                            self.memory.clear()
+                            self.update_memory("user", initial_request)
+                    continue
+                # If forcing proceed, fall through to save memory and increment step
 
             # Check for stuck state
             if self.is_stuck():

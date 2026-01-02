@@ -52,7 +52,7 @@ def clean_scene_dir(save_dir: Path):
 
 def process_scene(args: tuple) -> tuple:
     """Process a single scene with retries. Returns (scene_id, success)."""
-    scene_id, description, results_dir, max_retries = args
+    scene_id, description, results_dir, max_retries, max_step_retries = args
     worker_name = current_process().name
 
     save_dir = results_dir / f"scene_{scene_id:03d}"
@@ -69,13 +69,18 @@ def process_scene(args: tuple) -> tuple:
         "1",
     ]
 
+    # Pass max_step_retries via environment variable
+    env = os.environ.copy()
+    if max_step_retries > 0:
+        env["MAX_STEP_RETRIES"] = str(max_step_retries)
+
     for attempt in range(1, max_retries + 1):
         # Clean partial output before each attempt
         clean_scene_dir(save_dir)
 
         print(f"[{timestamp()}] [{worker_name}] Starting scene {scene_id} (attempt {attempt}/{max_retries}): {description[:50]}...")
 
-        result = subprocess.run(cmd, cwd=SCRIPT_DIR, capture_output=True, text=True)
+        result = subprocess.run(cmd, cwd=SCRIPT_DIR, capture_output=True, text=True, env=env)
 
         if result.returncode == 0:
             print(f"[{timestamp()}] [{worker_name}] Scene {scene_id} completed successfully")
@@ -135,6 +140,12 @@ def main():
         default=3,
         help="Maximum retries per failed scene (default: 3)",
     )
+    parser.add_argument(
+        "--max_step_retries",
+        type=int,
+        default=0,
+        help="Max failures per step before forcing proceed (0=disabled, default: 0)",
+    )
     args = parser.parse_args()
 
     # Setup paths
@@ -178,12 +189,14 @@ def main():
     print("=" * 60)
     print(f"Workers: {args.num_workers}")
     print(f"Max retries: {args.max_retries}")
+    if args.max_step_retries > 0:
+        print(f"Max step retries: {args.max_step_retries} (force proceed after failures)")
     print(f"Scenes to process: {len(scenes)}")
     print(f"Output: {results_dir}")
     print("=" * 60)
 
     # Prepare work items
-    work_items = [(scene_id, desc, results_dir, args.max_retries) for scene_id, desc in scenes]
+    work_items = [(scene_id, desc, results_dir, args.max_retries, args.max_step_retries) for scene_id, desc in scenes]
 
     # Process in parallel
     with Pool(processes=args.num_workers) as pool:
