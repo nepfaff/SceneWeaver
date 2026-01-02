@@ -165,7 +165,7 @@ class SceneDesigner:
 
         if (
             self.current_step == self.max_steps - 1
-            or self.tool_calls[0].function.name == "terminate"
+            or (self.tool_calls and self.tool_calls[0].function.name == "terminate")
         ):  # evaluate final step
             eval_results = self.eval(iter=self.current_step)
 
@@ -288,8 +288,18 @@ class SceneDesigner:
                     messages = []
                     for i, msg in enumerate(self.messages):
                         if hasattr(msg, 'role') and msg.role == 'tool':
-                            # Check if previous message has tool_calls
-                            if i > 0 and hasattr(self.messages[i-1], 'tool_calls') and self.messages[i-1].tool_calls:
+                            # Look backward for parent assistant with tool_calls
+                            parent_found = False
+                            for j in range(i - 1, -1, -1):
+                                parent = self.messages[j]
+                                if hasattr(parent, 'role') and parent.role == 'assistant':
+                                    if hasattr(parent, 'tool_calls') and parent.tool_calls:
+                                        # Found parent - ensure it's in messages
+                                        if parent not in messages:
+                                            messages.append(parent)
+                                        parent_found = True
+                                    break  # Stop at first assistant message
+                            if parent_found:
                                 messages.append(msg)
                             # else skip orphaned tool message
                         else:
@@ -557,6 +567,7 @@ class SceneDesigner:
                 self.available_tools = self.available_tools1
                 if (
                     hasattr(self, "tool_calls")
+                    and self.tool_calls
                     and self.tool_calls[0].function.name == "add_acdc"
                 ):  # modify size after using acdc
                     self.available_tools = ToolCollection(UpdateSizeExecute())
@@ -585,7 +596,7 @@ class SceneDesigner:
                 f.write(roomtype)
 
             self.current_step += 1
-            if self.tool_calls[0].function.name == "terminate":
+            if self.tool_calls and self.tool_calls[0].function.name == "terminate":
                 self.state = AgentState.FINISHED
                 results.append("Terminated: successfullly stop.")
 
