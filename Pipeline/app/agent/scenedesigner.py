@@ -263,47 +263,74 @@ class SceneDesigner:
         while True and retry < 3:
             try:
                 if len(self.messages) > 7:
-                    # Safe truncation: ensure tool responses have their parent assistant messages
+                    # Safe truncation: keep first message + last 6, ensuring tool_call integrity
+                    # First, build candidate list from tail
+                    tail_messages = self.messages[-6:]
                     messages = [self.messages[0]]
-                    tail_start = len(self.messages) - 6
-                    for i, msg in enumerate(self.messages[-6:]):
-                        orig_idx = tail_start + i
-                        # If this is a tool response, ensure parent assistant is included
-                        if hasattr(msg, 'role') and msg.role == 'tool':
-                            # Look backward for parent assistant with tool_calls
-                            parent_found = False
-                            for j in range(orig_idx - 1, -1, -1):
-                                parent = self.messages[j]
-                                if hasattr(parent, 'tool_calls') and parent.tool_calls:
-                                    if parent not in messages:
-                                        messages.append(parent)
-                                    parent_found = True
+
+                    # Process tail ensuring assistant+tool_calls pairs are complete
+                    i = 0
+                    while i < len(tail_messages):
+                        msg = tail_messages[i]
+                        if hasattr(msg, 'role') and msg.role == 'assistant' and hasattr(msg, 'tool_calls') and msg.tool_calls:
+                            # Check if all tool responses are in tail
+                            expected_ids = {tc.id for tc in msg.tool_calls}
+                            tool_responses = []
+                            j = i + 1
+                            while j < len(tail_messages):
+                                next_msg = tail_messages[j]
+                                if hasattr(next_msg, 'role') and next_msg.role == 'tool':
+                                    if hasattr(next_msg, 'tool_call_id') and next_msg.tool_call_id in expected_ids:
+                                        tool_responses.append(next_msg)
+                                        expected_ids.discard(next_msg.tool_call_id)
+                                    j += 1
+                                else:
                                     break
-                            if not parent_found:
-                                # Skip orphaned tool message - can't include without parent
-                                continue
-                        messages.append(msg)
-                else:
-                    # Even for small message lists, ensure no orphaned tool messages
-                    messages = []
-                    for i, msg in enumerate(self.messages):
-                        if hasattr(msg, 'role') and msg.role == 'tool':
-                            # Look backward for parent assistant with tool_calls
-                            parent_found = False
-                            for j in range(i - 1, -1, -1):
-                                parent = self.messages[j]
-                                if hasattr(parent, 'role') and parent.role == 'assistant':
-                                    if hasattr(parent, 'tool_calls') and parent.tool_calls:
-                                        # Found parent - ensure it's in messages
-                                        if parent not in messages:
-                                            messages.append(parent)
-                                        parent_found = True
-                                    break  # Stop at first assistant message
-                            if parent_found:
+                            if not expected_ids:  # All responses found
                                 messages.append(msg)
-                            # else skip orphaned tool message
+                                messages.extend(tool_responses)
+                            i = j
+                        elif hasattr(msg, 'role') and msg.role == 'tool':
+                            # Orphaned tool in tail - skip
+                            i += 1
                         else:
                             messages.append(msg)
+                            i += 1
+                else:
+                    # Ensure assistant messages with tool_calls are paired with their tool responses
+                    # First pass: collect all messages, tracking tool_call relationships
+                    messages = []
+                    i = 0
+                    while i < len(self.messages):
+                        msg = self.messages[i]
+                        if hasattr(msg, 'role') and msg.role == 'assistant' and hasattr(msg, 'tool_calls') and msg.tool_calls:
+                            # This is an assistant message with tool_calls
+                            # Collect all expected tool_call_ids
+                            expected_ids = {tc.id for tc in msg.tool_calls}
+                            # Look ahead for tool responses
+                            tool_responses = []
+                            j = i + 1
+                            while j < len(self.messages):
+                                next_msg = self.messages[j]
+                                if hasattr(next_msg, 'role') and next_msg.role == 'tool':
+                                    if hasattr(next_msg, 'tool_call_id') and next_msg.tool_call_id in expected_ids:
+                                        tool_responses.append(next_msg)
+                                        expected_ids.discard(next_msg.tool_call_id)
+                                    j += 1
+                                else:
+                                    break
+                            # Only include assistant + tool responses if we found all responses
+                            if not expected_ids:  # All tool_call_ids have responses
+                                messages.append(msg)
+                                messages.extend(tool_responses)
+                            # Skip the tool responses we've processed
+                            i = j
+                        elif hasattr(msg, 'role') and msg.role == 'tool':
+                            # Orphaned tool message - skip it
+                            i += 1
+                        else:
+                            messages.append(msg)
+                            i += 1
                 # messages = self.messages[:2]
                 # Get response with tool options
                 response = self.llm.ask_tool(
