@@ -331,7 +331,24 @@ class SceneDesigner:
                         else:
                             messages.append(msg)
                             i += 1
-                # messages = self.messages[:2]
+                # Validate messages before API call
+                if not messages:
+                    # Empty messages - use original self.messages as fallback
+                    messages = [msg for msg in self.messages
+                               if not (hasattr(msg, 'role') and msg.role == 'tool')]
+                if not messages:
+                    # Still empty - something is very wrong, skip this iteration
+                    logger.warning("No valid messages after filtering, retrying...")
+                    retry += 1
+                    continue
+                # Ensure first message is not a tool message
+                while messages and hasattr(messages[0], 'role') and messages[0].role == 'tool':
+                    messages.pop(0)
+                if not messages:
+                    logger.warning("All messages were tool messages, retrying...")
+                    retry += 1
+                    continue
+
                 # Get response with tool options
                 response = self.llm.ask_tool(
                     messages=messages,
@@ -558,6 +575,8 @@ class SceneDesigner:
         # if self.state != AgentState.IDLE:
         #     raise RuntimeError(f"Cannot run agent from state: {self.state}")
 
+        # Store initial request for potential memory reset
+        initial_request = request
         if request:
             self.update_memory("user", request)
 
@@ -606,7 +625,17 @@ class SceneDesigner:
             )
             step_result = self.step()
             if step_result == "Failed":
-                self.current_step -= 1
+                if self.current_step > 0:
+                    self.current_step -= 1
+                    # If going back to step 0, reset memory to initial state
+                    if self.current_step == 0 and initial_request:
+                        self.memory.clear()
+                        self.update_memory("user", initial_request)
+                else:
+                    # Step 0 failed - reset memory and retry step 0
+                    if initial_request:
+                        self.memory.clear()
+                        self.update_memory("user", initial_request)
                 continue
 
             # Check for stuck state
